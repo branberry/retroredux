@@ -15,6 +15,11 @@ function PANEL:Paint()
   surface.DrawTexturedRect(0, 0, wid, hei)
 end
 
+local function DrawClassRows()
+  local row_color = Color(100, 220, 240, 200)
+  surface.SetDrawColor(row_color)
+end
+
 vgui.Register("MyFirstPanel", PANEL, "Panel")
 local frameClassSelect
 function DrawClassSelect()
@@ -39,4 +44,5 @@ function DrawClassSelect()
   panelClassDetail:SetPos(x - (wid / 2), y - (hei / 2))
   panelClassDetail:SetSize(wid, hei)
   panelClassDetail:SetVisible(false)
+  frameClassSelect.Paint = DrawClassRows
 end
