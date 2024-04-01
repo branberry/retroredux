@@ -1,4 +1,9 @@
 local PANEL = {}
+-- Temporarily hardcoding classes for testing purposes
+local CLASSES = {
+  Group = "Magic",
+}
+
 function PANEL:Init()
   self:SetSize(100, 100)
   self:Center()
@@ -7,12 +12,16 @@ end
 function PANEL:Paint()
   if not self:GetParent():IsVisible() then return end
   print("Panel")
-  local rating = self.Rating or 1
   local wid, hei = self:GetSize()
+  local matBarBack = surface.GetTextureID("noxctf/classselect_bar_back")
+  local matBar = surface.GetTextureID("noxctf/classselect_bar")
+  local drawColor = HSVToColor(rating * 12, 1, 1)
   surface.SetDrawColor(0, 0, 0, 210)
   -- TODO: Add this material
-  -- surface.SetTexture(matBarBack)
+  surface.SetTexture(matBarBack)
   surface.DrawTexturedRect(0, 0, wid, hei)
+  surface.SetDrawColor(drawColor.r, drawColor.g, drawColor.b, 255)
+  surface.SetTexture(matBar)
 end
 
 local function DrawClassRows()
