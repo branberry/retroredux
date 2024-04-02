@@ -1,7 +1,12 @@
 local PANEL = {}
 -- Temporarily hardcoding classes for testing purposes
 local CLASSES = {
-  Group = "Magic",
+  {
+    Group = "Magic",
+    Image = "noxctf/classicons/mage",
+    Name = "Mage",
+    Description = "Has more vitality than the Wizard but less magic capability.@Channels extra mana quickly through their wand."
+  }
 }
 
 function PANEL:Init()
@@ -30,6 +35,20 @@ local function DrawClassRows()
 end
 
 vgui.Register("MyFirstPanel", PANEL, "Panel")
+local function drawClasses(frameClassSelect, screens, centx, centy)
+  for _, class in pairs(CLASSES) do
+    local row = centy + (360 * screens)
+    local column = (centx - (832 * screens)) + (.5 * (1024 * screens))
+    local button = vgui.Create("DImageButton", frameClassSelect)
+    local b = 0.666667 * screens
+    button:SetMaterial(class.Image)
+    button:SetSize(256 * b, 512 * b)
+    button:SetPos(column - (128 * b), row - (256 * b))
+    button:SetDrawBorder(false)
+    button:SetText("")
+  end
+end
+
 local frameClassSelect
 function DrawClassSelect()
   if frameClassSelect and frameClassSelect:IsValid() then frameClassSelect:Remove() end
@@ -53,5 +72,6 @@ function DrawClassSelect()
   panelClassDetail:SetPos(x - (wid / 2), y - (hei / 2))
   panelClassDetail:SetSize(wid, hei)
   panelClassDetail:SetVisible(false)
+  drawClasses(frameClassSelect, screens, centx, centy)
   frameClassSelect.Paint = DrawClassRows
 end
