@@ -48,7 +48,7 @@ local function drawClasses(frameClassSelect, screens, centx, centy)
     button:SetText("")
     button.DoClick = function(btn)
       local player = LocalPlayer()
-      player:ConCommand("cc_change_class")
+      player:ConCommand(CC_CHANGE_CLASS)
       frameClassSelect:Close()
     end
   end
