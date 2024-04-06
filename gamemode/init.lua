@@ -12,9 +12,14 @@ function GM:ShowSpare1(pl)
   pl:SendLua("CreateSpellMenu()")
 end
 
+function GM:PlayerSpawn(pl)
+  pl:Give("weapon_magewand")
+end
+
 local function changeClass(sender, command, arguments)
   print("Change class")
   print(sender)
+  sender:Spawn()
   sender:PrintMessage(HUD_PRINTTALK, "You are now a mage")
 end
 
