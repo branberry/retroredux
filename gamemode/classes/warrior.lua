@@ -1,6 +1,4 @@
 MAGE = {
-  Name = 'mage',
+  Name = 'warrior',
   Health = 100,
 }
-
-print('hello')
