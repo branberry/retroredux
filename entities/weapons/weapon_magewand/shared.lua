@@ -48,7 +48,6 @@ function SWEP:PrimaryAttack()
 	if owner:KeyDown(IN_ATTACK2) or CurTime() < self:GetNextPrimaryFire() then return end
 	self:SetNextPrimaryFire(CurTime() + self.Primary.Delay)
 	owner:DoAttackEvent()
-	if SERVER and owner:IsInvisible() then owner:RemoveInvisibility() end
 	local tr = util.TraceHull({
 		start = owner:GetShootPos(),
 		endpos = owner:GetShootPos() + owner:GetAimVector() * 38,
