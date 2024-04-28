@@ -32,14 +32,14 @@ end
 local function drawDeadHUD()
 end
 
-local function drawHUD()
-  drawHealth(0, 0, 100, 100)
+local function drawHUD(health)
+  drawHealth(0, 0, health, 100)
 end
 
 function GM:HUDPaint()
   local player = LocalPlayer()
   if not player:Alive() then drawDeadHUD() end
-  drawHUD()
+  drawHUD(player:Health())
 end
 
 function GM:HUDShouldDraw(name)
