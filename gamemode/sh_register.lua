@@ -3,8 +3,8 @@ function GM:RegisterClasses()
     include('classes/' .. classFile)
   end
 
-  table.insert(CLASSES, WARRIOR)
-  table.insert(CLASSES, MAGE)
+  CLASSES['WARRIOR'] = WARRIOR
+  CLASSES['MAGE'] = MAGE
   print('Classes registered')
 end
 
