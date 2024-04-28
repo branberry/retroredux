@@ -1,3 +1,7 @@
+for _, classFile in pairs(file.Find(GM.FolderName .. '/gamemode/classes/*.lua', 'LUA')) do
+  AddCSLuaFile('classes/' .. classFile)
+end
+
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("sh_globals.lua")
 AddCSLuaFile("sh_register.lua")
