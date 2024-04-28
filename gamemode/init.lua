@@ -24,16 +24,17 @@ end
 
 function GM:PlayerSpawn(pl)
   print('player spawned')
-  pl:Give("weapon_magewand")
-  pl.Class = 'mage'
+  if pl.Class == 'MAGE' then pl:Give("weapon_magewand") end
   print(pl.Class)
 end
 
 local function changeClass(sender, command, arguments)
   print("Change class")
-  print(sender)
+  local class = string.upper(arguments[1])
+  sender.Class = string.upper(arguments[1])
   sender:Spawn()
-  sender:PrintMessage(HUD_PRINTTALK, "You are now a mage")
+  local class = arguments[1]
+  sender:PrintMessage(HUD_PRINTTALK, "You are now a " .. class)
 end
 
 concommand.Add("cc_change_class", changeClass)
