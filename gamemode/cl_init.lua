@@ -32,14 +32,18 @@ end
 local function drawDeadHUD()
 end
 
-local function drawHUD(health)
-  drawHealth(0, 0, health, 100)
+local function drawHUD()
+  local pl = LocalPlayer()
+  if not pl:Alive() then drawDeadHUD() end
+  local className = pl:GetNWString('PlayerClass')
+  if not className then return end
+  local classInfo = CLASSES[className]
+  if not classInfo then return end
+  drawHealth(0, 0, pl:Health(), classInfo.Health)
 end
 
 function GM:HUDPaint()
-  local player = LocalPlayer()
-  if not player:Alive() then drawDeadHUD() end
-  drawHUD(player:Health())
+  drawHUD()
 end
 
 function GM:HUDShouldDraw(name)

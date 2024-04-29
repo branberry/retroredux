@@ -20,6 +20,7 @@ function GM:ShowSpare1(pl)
 end
 
 function GM:PlayerInitialSpawn(pl)
+  pl:SetNWString('PlayerClass', '')
 end
 
 function GM:PlayerSpawn(pl)
@@ -30,8 +31,11 @@ end
 
 local function changeClass(sender, command, arguments)
   print('Change class')
-  sender.Class = string.upper(arguments[1])
+  local className = string.upper(arguments[1])
+  local classInfo = CLASSES[className]
+  sender:SetNWString('PlayerClass', className)
   sender:Spawn()
+  sender:SetHealth(classInfo.Health)
   local class = arguments[1]
   sender:PrintMessage(HUD_PRINTTALK, 'You are now a ' .. class)
 end
