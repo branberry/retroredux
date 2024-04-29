@@ -6,6 +6,8 @@ local hud_NBarY = CreateClientConVar("nox_hud_nbar_y", 1, true, false)
 local background = surface.GetTextureID("noxctf/bar_background")
 local health_back = surface.GetTextureID("noxctf/health_bar_back")
 local health_bar = surface.GetTextureID("noxctf/health_bar")
+local hud_SpellMenuX = CreateClientConVar("nox_hud_spellmenu_x", 0.85, true, false)
+local hud_SpellMenuY = CreateClientConVar("nox_hud_spellmenu_y", 0.7, true, false)
 local COLOR_HEALTH = Color(240, 60, 60, 255)
 local function drawHealth(x, y, health, maxhealth)
   local w, h = ScrW(), ScrH()
@@ -32,12 +34,27 @@ end
 local function drawDeadHUD()
 end
 
+local function drawSpells(spells)
+  local w, h = ScrW(), ScrH()
+  for i = 1, #spells do
+    local spellName = spells[i]
+    local spellInfo = SPELLS[spellName]
+    local size = ScreenScale(10.6666667)
+    local dX = w * hud_SpellMenuX:GetFloat()
+    local dY = h * hud_SpellMenuY:GetFloat()
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.SetMaterial(Material(spellInfo.Icon), 'smooth')
+    surface.DrawTexturedRect(dX, dY, size, size)
+  end
+end
+
 local function drawHUD()
   local pl = LocalPlayer()
   if not pl:Alive() then drawDeadHUD() end
   local className = pl:GetPlayerClass()
-  if not className then return end
+  if not className or className == '' then return end
   local classInfo = CLASSES[className]
+  if classInfo.Spells then drawSpells(classInfo.Spells) end
   if not classInfo then return end
   drawHealth(0, 0, pl:Health(), classInfo.Health)
 end
