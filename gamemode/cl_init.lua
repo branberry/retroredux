@@ -35,7 +35,7 @@ end
 local function drawHUD()
   local pl = LocalPlayer()
   if not pl:Alive() then drawDeadHUD() end
-  local className = pl:GetNWString('PlayerClass')
+  local className = pl:GetPlayerClass()
   if not className then return end
   local classInfo = CLASSES[className]
   if not classInfo then return end

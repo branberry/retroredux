@@ -25,15 +25,16 @@ end
 
 function GM:PlayerSpawn(pl)
   print('player spawned')
-  if pl.Class == 'MAGE' then pl:Give('weapon_magewand') end
-  print(pl.Class)
+  if pl:GetPlayerClass() == 'MAGE' then pl:Give('weapon_magewand') end
+  print(pl.GetPlayerClass())
 end
 
 local function changeClass(sender, command, arguments)
   print('Change class')
   local className = string.upper(arguments[1])
   local classInfo = CLASSES[className]
-  sender:SetNWString('PlayerClass', className)
+  sender:SetPlayerClass(className)
+  sender:RemoveAllItems()
   sender:Spawn()
   sender:SetHealth(classInfo.Health)
   local class = arguments[1]
