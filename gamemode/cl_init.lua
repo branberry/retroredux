@@ -34,17 +34,18 @@ end
 local function drawDeadHUD()
 end
 
-local function drawSpells(spells)
+local function drawSpells(classSpells)
   local w, h = ScrW(), ScrH()
-  for i = 1, #spells do
-    local spellName = spells[i]
+  for i = 1, #classSpells do
+    local spellName = classSpells[i]
     local spellInfo = SPELLS[spellName]
-    local size = ScreenScale(10.6666667)
+    local size = ScreenScale(16)
     local dX = w * hud_SpellMenuX:GetFloat()
     local dY = h * hud_SpellMenuY:GetFloat()
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(Material(spellInfo.Icon), 'smooth')
     surface.DrawTexturedRect(dX, dY, size, size)
+    draw.SimpleTextOutlined('1')
   end
 end
 
