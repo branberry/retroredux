@@ -41,4 +41,15 @@ local function changeClass(sender, command, arguments)
   sender:PrintMessage(HUD_PRINTTALK, 'You are now a ' .. class)
 end
 
+local function cast(sender, command, arguments)
+  if not arguments[1] then return end
+  if not sender:Alive() then return end
+  if sender:IsFrozen() then return end
+  print('casting spell... ' .. arguments[1])
+  local spellName = arguments[1]
+  local spellFunction = SPELLS[spellName].Func
+  spellFunction(sender)
+end
+
 concommand.Add('cc_change_class', changeClass)
+concommand.Add('cast', cast)

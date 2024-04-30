@@ -1,5 +1,6 @@
 local function burn(pl)
   local ent = ents.Create('projectile_burn')
+  print(ent)
   if ent:IsValid() then
     ent:SetOwner(pl)
     ent:SetPos(pl:GetShootPos())

@@ -1,6 +1,7 @@
 include("shared.lua")
 include("vgui/class_select.lua")
 include("vgui/spell_editor.lua")
+local SPELL_SLOTS = {}
 local hud_NBarX = CreateClientConVar("nox_hud_nbar_x", 0, true, false)
 local hud_NBarY = CreateClientConVar("nox_hud_nbar_y", 1, true, false)
 local background = surface.GetTextureID("noxctf/bar_background")
@@ -34,18 +35,35 @@ end
 local function drawDeadHUD()
 end
 
+hook.Add("PlayerBindPress", "handle_key_press", function(ply, bind, pressed, code)
+  print(bind)
+  if code == KEY_1 then
+    for k, v in pairs(SPELL_SLOTS) do
+      print(k, v)
+    end
+
+    local spellName = SPELL_SLOTS[code]
+    RunConsoleCommand('cast', spellName)
+  end
+end)
+
 local function drawSpells(classSpells)
   local w, h = ScrW(), ScrH()
   for i = 1, #classSpells do
+    -- Key codes are sequential, and for key number 1, the code is 2 (and for key number 2, the code is 3 etc.)
+    -- This is A temporary solution
+    -- probably could create list with all valid keycodes at some point e.g. codes = {KEY_1, KEY_2, etc}
     local spellName = classSpells[i]
     local spellInfo = SPELLS[spellName]
+    local keyCode = i + 1
+    SPELL_SLOTS[keyCode] = spellName
     local size = ScreenScale(16)
     local dX = w * hud_SpellMenuX:GetFloat()
     local dY = h * hud_SpellMenuY:GetFloat()
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(Material(spellInfo.Icon), 'smooth')
     surface.DrawTexturedRect(dX, dY, size, size)
-    draw.SimpleTextOutlined('1')
+    draw.SimpleTextOutlined(i, 'CloseCaption_Bold', dX, dY, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
   end
 end
 
