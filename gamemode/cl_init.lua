@@ -62,16 +62,6 @@ end
 hook.Add("PlayerBindPress", "handle_key_press", function(ply, bind, pressed, code)
   if code == KEY_1 then
     local spellName = SPELL_SLOTS[code]
-    local spellInfo = SPELLS[spellName]
-    local curMana = ply:GetMana()
-    print('cur curMana', curMana)
-    print('cost', spellInfo.Cost)
-    if spellInfo.Cost > curMana then
-      print('out of mana')
-      return
-    end
-
-    ply:SetMana(curMana - spellInfo.Cost)
     RunConsoleCommand('cast', spellName)
   end
 end)

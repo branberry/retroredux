@@ -48,7 +48,17 @@ local function cast(sender, command, arguments)
   if sender:IsFrozen() then return end
   print('casting spell... ' .. arguments[1])
   local spellName = arguments[1]
-  local spellFunction = SPELLS[spellName].Func
+  local spellInfo = SPELLS[spellName]
+  local spellFunction = spellInfo.Func
+  local curMana = sender:GetMana()
+  print('cur curMana', curMana)
+  print('cost', spellInfo.Cost)
+  if spellInfo.Cost > curMana then
+    print('out of mana')
+    return
+  end
+
+  sender:SetMana(curMana - spellInfo.Cost)
   spellFunction(sender)
 end
 
