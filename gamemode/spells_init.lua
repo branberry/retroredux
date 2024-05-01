@@ -13,4 +13,5 @@ end
 SPELLS.Burn = {
   Func = burn,
   Icon = 'spellicons/burn.png',
+  Cost = 10,
 }

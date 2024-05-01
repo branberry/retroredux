@@ -7,10 +7,34 @@ local hud_NBarY = CreateClientConVar("nox_hud_nbar_y", 1, true, false)
 local background = surface.GetTextureID("noxctf/bar_background")
 local health_back = surface.GetTextureID("noxctf/health_bar_back")
 local health_bar = surface.GetTextureID("noxctf/health_bar")
+local mana_back = surface.GetTextureID("noxctf/mana_bar_back")
+local mana_bar = surface.GetTextureID("noxctf/mana_bar")
 local hud_SpellMenuX = CreateClientConVar("nox_hud_spellmenu_x", 0.85, true, false)
 local hud_SpellMenuY = CreateClientConVar("nox_hud_spellmenu_y", 0.7, true, false)
 local COLOR_HEALTH = Color(240, 60, 60, 255)
-local function drawHealth(x, y, health, maxhealth)
+local COLOR_MANA = Color(144, 210, 248, 255)
+local function drawMana(mana, maxMana)
+  local w, h = ScrW(), ScrH()
+  local curX = hud_NBarX:GetFloat() * w
+  local curY = hud_NBarY:GetFloat() * h
+  local screens = math.min(1, ((w / 3640) + 0.5) ^ 2) --BetterScreenScale()
+  local imagesizey = 128 * screens
+  local imagesizex = 512 * screens
+  surface.SetDrawColor(255, 255, 255, 255)
+  surface.SetTexture(mana_back)
+  surface.DrawTexturedRect(curX, curY - imagesizey, imagesizex, imagesizey)
+  surface.SetTexture(mana_bar)
+  if mana < maxMana * 0.25 then
+    COLOR_HEALTH.a = 255 - math.abs(math.sin(RealTime() * 4)) * 160
+    surface.SetDrawColor(COLOR_HEALTH)
+  end
+
+  surface.SetTexture(health_bar)
+  surface.DrawTexturedRectUV(curX + (imagesizex * 0.185546875), curY - imagesizey, curX + (imagesizex / 1.38378378378) * (mana / maxMana), imagesizey, 0.185546875, 0, 0.185546875 + 0.72265625 * (mana / maxMana), 1)
+  draw.SimpleTextOutlined(mana, "CloseCaption_Bold", 43 * screens + curX, curY - 68 * screens, COLOR_MANA, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
+end
+
+local function drawHealth(health, maxhealth)
   local w, h = ScrW(), ScrH()
   local curX = hud_NBarX:GetFloat() * w
   local curY = hud_NBarY:GetFloat() * h
@@ -36,13 +60,18 @@ local function drawDeadHUD()
 end
 
 hook.Add("PlayerBindPress", "handle_key_press", function(ply, bind, pressed, code)
-  print(bind)
   if code == KEY_1 then
-    for k, v in pairs(SPELL_SLOTS) do
-      print(k, v)
+    local spellName = SPELL_SLOTS[code]
+    local spellInfo = SPELLS[spellName]
+    local cur_mana = ply:GetMana()
+    print('cur mana', cur_mana)
+    print('cost', spellInfo.Cost)
+    if spellInfo.Cost > cur_mana then
+      print('out of mana')
+      return
     end
 
-    local spellName = SPELL_SLOTS[code]
+    ply:SetMana(cur_mana - spellInfo.Cost)
     RunConsoleCommand('cast', spellName)
   end
 end)
@@ -75,7 +104,8 @@ local function drawHUD()
   local classInfo = CLASSES[className]
   if classInfo.Spells then drawSpells(classInfo.Spells) end
   if not classInfo then return end
-  drawHealth(0, 0, pl:Health(), classInfo.Health)
+  drawHealth(pl:Health(), classInfo.Health)
+  if classInfo.Mana then drawMana(pl:GetMana(), classInfo.Mana) end
 end
 
 function GM:HUDPaint()

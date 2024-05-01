@@ -4,4 +4,5 @@ WARRIOR = {
   Image = 'noxctf/classicons/warrior',
   RawIcon = 'spellicons/berserkercharge.png',
   Description = 'Fast, strong, and absolutely no magic.@They have some very powerful abilities.@Must rely on teammates to heal them.',
+  Spells = {},
 }
