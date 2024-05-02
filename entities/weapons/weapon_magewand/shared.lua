@@ -77,7 +77,7 @@ end
 
 if CLIENT then
 	function SWEP:DrawWorldModel()
-		if self:GetOwner() and self:GetOwner():IsValid() and self:GetOwner():IsInvisible() then return end
+		if self:GetOwner() and self:GetOwner():IsValid() then return end
 		self:DrawModel()
 	end
 end

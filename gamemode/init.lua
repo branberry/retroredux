@@ -8,6 +8,7 @@ AddCSLuaFile('sh_register.lua')
 AddCSLuaFile('obj_player_extend.lua')
 AddCSLuaFile('vgui/class_select.lua')
 AddCSLuaFile('vgui/spell_editor.lua')
+AddCSLuaFile("spells_init.lua")
 AddCSLuaFile('cl_init.lua')
 include('shared.lua')
 function GM:ShowTeam(pl)
@@ -38,16 +39,18 @@ local function changeClass(sender, command, arguments)
   sender:SetHealth(classInfo.Health)
   print(classInfo.Mana)
   sender:SetMana(classInfo.Mana)
+  sender:SetMaxMana(classInfo.Mana)
+  sender:SetManaRegeneration(classInfo.ManaRegeneration)
   local class = arguments[1]
   sender:PrintMessage(HUD_PRINTTALK, 'You are now a ' .. class)
 end
 
 local function cast(sender, command, arguments)
-  if not arguments[1] then return end
+  local spellName = arguments[1]
+  if not spellName then return end
   if not sender:Alive() then return end
   if sender:IsFrozen() then return end
-  print('casting spell... ' .. arguments[1])
-  local spellName = arguments[1]
+  print('casting spell... ' .. spellName)
   local spellInfo = SPELLS[spellName]
   local spellFunction = spellInfo.Func
   local curMana = sender:GetMana()

@@ -29,9 +29,8 @@ local function drawMana(mana, maxMana)
     surface.SetDrawColor(COLOR_HEALTH)
   end
 
-  surface.SetTexture(health_bar)
-  surface.DrawTexturedRectUV(curX + (imagesizex * 0.185546875), curY - imagesizey, curX + (imagesizex / 1.38378378378) * (mana / maxMana), imagesizey, 0.185546875, 0, 0.185546875 + 0.72265625 * (mana / maxMana), 1)
-  draw.SimpleTextOutlined(mana, "CloseCaption_Bold", 43 * screens + curX, curY - 68 * screens, COLOR_MANA, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
+  surface.DrawTexturedRectUV(curX + (imagesizex / 8), curY - imagesizey, curX + (imagesizex / 1.45868945869) * (mana / maxMana), imagesizey, 0.125, 0, 0.125 + 0.685546875 * (mana / maxMana), 1)
+  draw.SimpleTextOutlined(math.floor(mana), "CloseCaption_Bold", 25 * screens + curX, curY - 68 * screens, COLOR_MANA, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
 end
 
 local function drawHealth(health, maxhealth)
@@ -74,6 +73,7 @@ local function drawSpells(classSpells)
     -- probably could create list with all valid keycodes at some point e.g. codes = {KEY_1, KEY_2, etc}
     local spellName = classSpells[i]
     local spellInfo = SPELLS[spellName]
+    if not spellInfo then return end
     local keyCode = i + 1
     SPELL_SLOTS[keyCode] = spellName
     local size = ScreenScale(16)
