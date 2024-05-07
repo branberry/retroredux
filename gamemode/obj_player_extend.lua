@@ -1,6 +1,7 @@
 -- This file contains custom methods for the Player metatable (or 'class')
 local meta = FindMetaTable('Player')
 if not meta then return end
+if SERVER then util.AddNetworkString('regen_mana') end
 function meta:SetPlayerClass(className)
   self:SetNWString('PlayerClass', className)
 end
@@ -10,22 +11,28 @@ function meta:GetPlayerClass()
 end
 
 function meta:SetMana(mana)
-  self.PreviousMana = mana
   self:SetNWInt('Mana', mana)
 end
 
 function meta:GetMana()
+  local updatedMana = self:GetNWInt('Mana')
   local ct = CurTime()
-  if not self.RegenTime then self.RegenTime = ct + 2 end
-  if self.RegenTime < CurTime() then
-    self.RegenTime = CurTime() + 2
-    self.PreviousMana = self.PreviousMana + self:GetManaRegeneration()
-    print(self.PreviousMana)
-    if self.PreviousMana >= self:GetMaxMana() then
-      self.PreviousMana = self:GetMaxMana()
-      return self.PreviousMana
+  if not self.ManaRegenTime then self.ManaRegenTime = ct + 5 end
+  if self.ManaRegenTime < ct then
+    self.ManaRegenTime = ct + 5
+    updatedMana = math.Clamp(updatedMana + self:GetManaRegeneration(), 0, self:GetMaxMana())
+    print('manaregenTime', self.ManaRegenTime)
+    print('curTime', ct)
+    print('regen mana size', self:GetManaRegeneration())
+    -- we want to send an update to the server
+    -- so that the updated value sticks
+    if CLIENT then
+      net.Start('regen_mana')
+      print(updatedMana)
+      net.WriteUInt(updatedMana, 9)
+      net.SendToServer()
+      return self:GetNWInt('Mana')
     end
-    return self.PreviousMana
   end
   return self:GetNWInt('Mana')
 end
@@ -45,3 +52,9 @@ end
 function meta:GetManaRegeneration()
   return self:GetNWInt('ManaRegeneration', 0)
 end
+
+net.Receive('regen_mana', function(len, ply)
+  local mana = net.ReadUInt(9)
+  print('regen_mana')
+  ply:SetMana(mana)
+end)
