@@ -55,7 +55,6 @@ end
 
 net.Receive('regen_mana', function(len, ply)
   local mana = net.ReadUInt(9)
-  print('regen_mana')
   ply:SetMana(mana)
 end)
 
