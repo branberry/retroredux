@@ -57,12 +57,19 @@ net.Receive('regen_mana', function(len, ply)
   local mana = net.ReadUInt(9)
   print('regen_mana')
   ply:SetMana(mana)
-<<<<<<< Updated upstream
-end)
-=======
 end)
 
+function meta:GetStatus(type)
+  local ent = self["status_"..type]
+  if ent and ent:GetOwner() == self then 
+    print(ent:GetClass())
+    return ent end
+end
+
 function meta:GiveStatus(type, dur, Effector)
+  local alreadyexists = self:GetStatus(type)
+  if not alreadyexists then
+
   local ent = ents.Create("status_"..type)
   if ent:IsValid() then
     ent:Spawn()
@@ -70,14 +77,9 @@ function meta:GiveStatus(type, dur, Effector)
     if Effector then
       ent:setEffector(Effector)
     end
+    end
   end
 end
-
-function meta:GetStatus(type)
-  local ent = self["status_"..type]
-  if (ent and ent:IsValid() and ent:GetOwner() == self) then return ent end
-end
-
 function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
 
 
@@ -89,7 +91,6 @@ d:SetInflictor(inflictor)
 
 if attacker then
   d:SetAttacker(attacker)
-  print("you were attacked")
 else
 d:SetAttacker(self)
 end
@@ -99,4 +100,5 @@ if damageForce then
 end
 self:TakeDamageInfo(d)
 end
->>>>>>> Stashed changes
+
+

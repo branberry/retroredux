@@ -17,7 +17,7 @@ function ENT:Think()
 
 	
 
-	if (owner:WaterLevel() < 0 or not owner:Alive()) then self:Remove() return end
+	if (owner:WaterLevel() < 0 or not owner:Alive() or (self.DeathTime <= CurTime())) then self:Remove() return end
 
 		owner:TakeSpecialDamage(1,DMG_BURN, self.Effector, self)
 end
