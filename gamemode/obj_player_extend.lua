@@ -66,7 +66,6 @@ function meta:GetStatus(type)
 end
 
 function meta:GiveStatus(type, dur, Effector)
-<<<<<<< HEAD
   local alreadyexists = self:GetStatus(type)
   if not alreadyexists then
 
@@ -80,7 +79,6 @@ function meta:GiveStatus(type, dur, Effector)
     end
   end
 end
-=======
   local ent = ents.Create("status_" .. type)
   if ent:IsValid() then
     ent:Spawn()
@@ -94,7 +92,6 @@ function meta:GetStatus(type)
   if ent and ent:IsValid() and ent:GetOwner() == self then return ent end
 end
 
->>>>>>> f4df17f673c05252a1b3a17be7fcff81d5ba31ab
 function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
   local d = DamageInfo()
   d:SetDamage(amount)
