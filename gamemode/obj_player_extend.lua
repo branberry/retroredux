@@ -107,7 +107,6 @@ function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
     d:SetAttacker(self)
   end
 
-<<<<<<< HEAD
 
 local d = DamageInfo()
 
@@ -128,8 +127,6 @@ self:TakeDamageInfo(d)
 end
 
 
-=======
   if damageForce then d:SetDamageForce(damageForce) end
   self:TakeDamageInfo(d)
 end
->>>>>>> f4df17f673c05252a1b3a17be7fcff81d5ba31ab
