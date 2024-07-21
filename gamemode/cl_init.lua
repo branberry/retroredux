@@ -1,6 +1,8 @@
 include("shared.lua")
 include("vgui/class_select.lua")
+include("vgui/team_select.lua")
 include("vgui/spell_editor.lua")
+include("vgui/gamestate.lua")
 local SPELL_SLOTS = {}
 local hud_NBarX = CreateClientConVar("nox_hud_nbar_x", 0, true, false)
 local hud_NBarY = CreateClientConVar("nox_hud_nbar_y", 1, true, false)
@@ -13,6 +15,8 @@ local hud_SpellMenuX = CreateClientConVar("nox_hud_spellmenu_x", 0.85, true, fal
 local hud_SpellMenuY = CreateClientConVar("nox_hud_spellmenu_y", 0.7, true, false)
 local COLOR_HEALTH = Color(240, 60, 60, 255)
 local COLOR_MANA = Color(144, 210, 248, 255)
+surface.CreateFont("DefaultFontSmall", {font = "Arial", extended = true, size = 14})
+surface.CreateFont("DefaultFontMed", {font = "Arial", extended = true, size = 32})
 local function drawMana(mana, maxMana)
   local w, h = ScrW(), ScrH()
   local curX = hud_NBarX:GetFloat() * w
@@ -101,7 +105,26 @@ end
 function GM:HUDPaint()
   drawHUD()
 end
+function GM:CreateVGUI()
+if !GameStatePanel then
+self.GameStatePanel = vgui.Create('GameState')
+  end
+end
+
+ local function CreateTeamSelect()
+  DrawTeamSelect()
+end
 
 function GM:HUDShouldDraw(name)
   return name ~= "CHudCrosshair" and name ~= "CHudHealth" and name ~= "CHudBattery" and name ~= "CHudAmmo" and name ~= "CHudSecondaryAmmo" and name ~= "CHudDamageIndicator"
 end
+
+function GM:Initialize()
+self:CreateVGUI()
+self:CreateConCommands()
+end  
+
+function GM:CreateConCommands()
+end
+
+concommand.Add("nox_openteamselect", DrawTeamSelect)

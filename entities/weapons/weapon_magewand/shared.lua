@@ -18,7 +18,7 @@ if CLIENT then
 	end
 
 	function SWEP:DrawWeaponSelection(x, y, wide, tall, alpha)
-		draw.SimpleText(self.PrintName, "teamplay", x + wide * 0.5, y + tall * 0.5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText(self.PrintName, "DefaultFontSmall", x + wide * 0.5, y + tall * 0.5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
 end
 

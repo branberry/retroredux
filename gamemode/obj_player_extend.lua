@@ -55,6 +55,75 @@ end
 
 net.Receive('regen_mana', function(len, ply)
   local mana = net.ReadUInt(9)
-  print('regen_mana')
   ply:SetMana(mana)
 end)
+
+function meta:GetStatus(type)
+  local ent = self["status_"..type]
+  if ent and ent:GetOwner() == self then 
+    print(ent:GetClass())
+    return ent end
+end
+
+function meta:GiveStatus(type, dur, Effector)
+  local alreadyexists = self:GetStatus(type)
+  if not alreadyexists then
+
+  local ent = ents.Create("status_"..type)
+  if ent:IsValid() then
+    ent:Spawn()
+    ent:SetPlayer(self)
+    if Effector then
+      ent:setEffector(Effector)
+    end
+    end
+  end
+end
+  local ent = ents.Create("status_" .. type)
+  if ent:IsValid() then
+    ent:Spawn()
+    ent:SetPlayer(self)
+    if Effector then ent:setEffector(Effector) end
+  end
+end
+
+function meta:GetStatus(type)
+  local ent = self["status_" .. type]
+  if ent and ent:IsValid() and ent:GetOwner() == self then return ent end
+end
+
+function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
+  local d = DamageInfo()
+  d:SetDamage(amount)
+  d:SetDamageType(type)
+  d:SetInflictor(inflictor)
+  if attacker then
+    d:SetAttacker(attacker)
+    print("you were attacked")
+  else
+    d:SetAttacker(self)
+  end
+
+
+local d = DamageInfo()
+
+d:SetDamage(amount)
+d:SetDamageType(type)
+d:SetInflictor(inflictor)
+
+if attacker then
+  d:SetAttacker(attacker)
+else
+d:SetAttacker(self)
+end
+
+if damageForce then
+  d:SetDamageForce(damageForce)
+end
+self:TakeDamageInfo(d)
+end
+
+
+  if damageForce then d:SetDamageForce(damageForce) end
+  self:TakeDamageInfo(d)
+end
