@@ -1,0 +1,8 @@
+"retroredux"
+{
+	"base"		"base"
+	"title"		"Retro Redux"
+	"maps"		"^rtp_|^gm_build_noxctf_|^nox_|^noxctf_|^noxtp_|^noxnb_"
+	"category"	"pve"
+	"menusystem"	"1"
+}
