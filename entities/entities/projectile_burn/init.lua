@@ -58,5 +58,10 @@ function ENT:Explode(hitpos, hitnormal)
 end
 
 function ENT:StartTouch(ent)
-	if ent:IsPlayer() then ent:GiveStatus("burn", 2) end
+	local owner = self:GetOwner()
+	if ent:IsPlayer() then
+		ent:GiveStatus("burn", owner, {
+			dur = 2
+		})
+	end
 end

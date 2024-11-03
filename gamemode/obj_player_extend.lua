@@ -58,28 +58,42 @@ net.Receive('regen_mana', function(len, ply)
   ply:SetMana(mana)
 end)
 
-function meta:GiveStatus(type, dur, Effector)
-  local ent = ents.Create("status_" .. type)
-  if ent:IsValid() then
-    ent:Spawn()
-    ent:SetPlayer(self)
-    if Effector then ent:setEffector(Effector) end
-  end
-end
-
 function meta:GetStatus(type)
   local ent = self["status_" .. type]
   if ent and ent:IsValid() and ent:GetOwner() == self then return ent end
 end
 
+function meta:GiveStatus(Name, Effector, Args)
+  local ent = ents.Create("status_" .. Name)
+  local existingEnt = self:GetStatus(Name)
+  if ent:IsValid() then
+    ent:Spawn()
+    if Effector then ent:setEffector(Effector) end
+    if existingEnt and existingEnt:IsValid() then
+      ent:SetPlayer(self, true)
+    else
+      ent:SetPlayer(self, false)
+    end
+  end
+end
+
 function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
+  local d = DamageInfo()
+  d:SetDamage(amount)
+  if type then d:SetDamageType(type) end
+  d:SetInflictor(inflictor)
+  if attacker and attacker:IsValid() then
+    d:SetAttacker(attacker)
+  else
+    d:SetAttacker(self)
+  end
+
   local d = DamageInfo()
   d:SetDamage(amount)
   d:SetDamageType(type)
   d:SetInflictor(inflictor)
   if attacker then
     d:SetAttacker(attacker)
-    print("you were attacked")
   else
     d:SetAttacker(self)
   end
