@@ -11,10 +11,10 @@ function ENT:Think()
 	local pos = self:GetPos()
 	if self.DeathTime <= CurTime() or self:WaterLevel() > 0 then self:Remove() end
 	for _, ent in pairs(ents.FindInSphere(pos, 10)) do
-		if ent:IsPlayer() then
-	 local st = ent:GetStatus("burn")
-	 print(tostring(st))
+		if ent:IsPlayer() and ent:Alive() then
+			ent:GiveStatus("burn", owner, {
+				dur = 2
+			})
 		end
-		if (ent:IsPlayer() and ent:Alive() and not ent:GetStatus("burn")) then ent:GiveStatus("burn", 2, owner) end
 	end
 end

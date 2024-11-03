@@ -7,6 +7,9 @@ function ENT:Initialize()
 	if owner:IsValid() then
 		owner[self:GetClass()] = self
 	end
+<<<<<<< HEAD
 
 	self:OnInitialize()
+=======
+>>>>>>> burnchange
 end

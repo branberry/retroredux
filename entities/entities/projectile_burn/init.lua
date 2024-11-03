@@ -59,5 +59,13 @@ end
 
 function ENT:StartTouch(ent)
 	local owner = self:GetOwner()
+<<<<<<< HEAD
 	if (ent:IsPlayer() and not ent:GetStatus("burn")) then ent:GiveStatus("burn", 2, owner) end
+=======
+	if ent:IsPlayer() then
+		ent:GiveStatus("burn", owner, {
+			dur = 2
+		})
+	end
+>>>>>>> burnchange
 end
