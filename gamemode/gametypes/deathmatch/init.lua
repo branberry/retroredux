@@ -3,6 +3,67 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 function GAMEMODE:GameTypeInit()
+local datatbl = gamemode.Call('GetPostMapData')
+  if datatbl.ShouldHavePrepPeriod then
+    SetGlobalFloat('EndTime', (CurTime() + self.PrepTime))
+    gamemode.Call('SetRoundStatus', 0)
+  else
+    SetGlobalFloat('EndTime', (CurTime() + self.DefaultRoundDuration))
+    gamemode.Call('SetRoundStatus', 1, true)
+  end
+end
+
+local function DetermineWinners(allowdraw)
+  local highest_teams = {}
+  local teaminfos = GAMEMODE.TeamInfos
+
+  for i, v in pairs(teaminfos) do
+    local highest_score = highest_teams[table.GetWinningKey(highest_teams)]
+    if highest_score then
+      if highest_score < v.Score then 
+        table.Empty(highest_teams)
+        highest_teams[i] = v.Score
+      
+      elseif highest_score == v.Score then
+        highest_teams[i] = v.Score
+      end
+
+    else
+  
+      highest_teams[i] = v.Score
+    
+    end
+  end
+  if allowdraw and #highest_teams > 1 then return highest_teams
+
+  else return table.Random(highest_teams) end -- Select random currently, im thinking of changing this to instead just a tie, or the chance for a sudden death between the drawn teams.
+end
+
+function GAMEMODE:GameTypeThink()
+  local endtime = GetGlobalFloat('EndTime', 64)
+
+  local timeremaining = endtime - CurTime()
+
+  if timeremaining <= 0 and self.RoundStatus != -1 then
+
+    if self.RoundStatus == 0 then
+      
+      gamemode.Call('SetRoundStatus', 1, true) -- End Of Grace Period.
+      SetGlobalFloat('EndTime', CurTime() + DM.RoundLength)
+
+    elseif self.RoundStatus == 1 then
+
+      local value, key = DetermineWinners(true)
+
+      if istable(value) then -- If the game is tied, the 'value' variable is the table of teams.
+        gamemode.Call('SetRoundStatus', 2, true) -- Round is then in Overtime
+        SetGlobalFloat('EndTime', CurTime() + self.OverTime)
+      else
+
+      gamemode.Call('EndRound', key) -- Only one winner
+      end
+    end
+  end
 end
   
   function GAMEMODE:GameTypeDoPlayerDeath(pl, attacker, dmginfo)
@@ -35,5 +96,4 @@ end
         end
       end
     end
-  
   end

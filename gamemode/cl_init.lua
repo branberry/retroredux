@@ -1,8 +1,45 @@
-include("shared.lua")
-include("vgui/class_select.lua")
-include("vgui/team_select.lua")
-include("vgui/spell_editor.lua")
-include("vgui/gamestate.lua")
+include('shared.lua')
+
+include('cl_globals.lua')
+include('cl_util.lua')
+include('cl_options.lua')
+
+include('obj_player_extend.lua')
+include('cl_obj_player_extend.lua')
+
+include('vgui/class_select.lua')
+include('vgui/team_select.lua')
+include('vgui/spell_editor.lua')
+include('vgui/spell_bar.lua')
+include('vgui/spell_wheel.lua')
+include('vgui/gamestate.lua')
+include('vgui/dm_teamscore.lua')
+include('vgui/roundresults.lua')
+include('vgui/notifycenter.lua')
+
+GM.TeamInfos = {}
+GM.TeamSelectViewOverride = ents.FindByName('Map_CinematicCamera')
+
+GM.GameType = ''
+
+GM.CameraLockData = {
+  Enabled = false,
+  Loc = vector_origin,
+  IniLoc = vector_origin,
+  Rot = angle_zero,
+  IniRot = angle_zero,
+  EaseTime = 2,
+  ArrivalTime = CurTime()
+}
+
+GM.SpellTables = {}
+
+surface.CreateFont('DefaultFontMini', {font = 'Arial', extended = true, size = 14})
+surface.CreateFont('DefaultFontSmall', {font = 'Arial', extended = true, size = 18})
+surface.CreateFont('DefaultFontMed', {font = 'Arial', extended = true, size = 32})
+surface.CreateFont('DefaultFontLarge', {font = 'Arial', extended = true, size = 64})
+surface.CreateFont('DefaultFontVeryLarge', {font = 'Arial', extended = true, size = 92})
+
 local SPELL_SLOTS = {}
 local hud_NBarX = CreateClientConVar('nox_hud_nbar_x', 0, true, false)
 local hud_NBarY = CreateClientConVar('nox_hud_nbar_y', 1, true, false)
@@ -15,17 +52,6 @@ local hud_SpellMenuX = CreateClientConVar('nox_hud_spellmenu_x', 0.85, true, fal
 local hud_SpellMenuY = CreateClientConVar('nox_hud_spellmenu_y', 0.7, true, false)
 local COLOR_HEALTH = Color(240, 60, 60, 255)
 local COLOR_MANA = Color(144, 210, 248, 255)
-surface.CreateFont("DefaultFontSmall", {
-  font = "Arial",
-  extended = true,
-  size = 14
-})
-
-surface.CreateFont("DefaultFontMed", {
-  font = "Arial",
-  extended = true,
-  size = 32
-})
 
 local function drawMana(mana, maxMana)
   local w, h = ScrW(), ScrH()
@@ -70,34 +96,13 @@ local function drawHealth(health, maxhealth)
 end
 
 local function drawDeadHUD()
+
 end
 
-hook.Add('PlayerBindPress', 'handle_key_press', function(ply, bind, pressed, code)
-  if code == KEY_1 then
-    local spellName = SPELL_SLOTS[code]
-    RunConsoleCommand('cast', spellName)
-  end
-end)
-
-local function drawSpells(classSpells)
-  local w, h = ScrW(), ScrH()
-  for i = 1, #classSpells do
-    -- Key codes are sequential, and for key number 1, the code is 2 (and for key number 2, the code is 3 etc.)
-    -- This is A temporary solution
-    -- probably could create list with all valid keycodes at some point e.g. codes = {KEY_1, KEY_2, etc}
-    local spellName = classSpells[i]
-    local spellInfo = SPELLS[spellName]
-    if not spellInfo then return end
-    local keyCode = i + 1
-    SPELL_SLOTS[keyCode] = spellName
-    local size = ScreenScale(16)
-    local dX = w * hud_SpellMenuX:GetFloat()
-    local dY = h * hud_SpellMenuY:GetFloat()
-    surface.SetDrawColor(255, 255, 255, 255)
-    surface.SetMaterial(Material(spellInfo.Icon), 'smooth')
-    surface.DrawTexturedRect(dX, dY, size, size)
-    draw.SimpleTextOutlined(i, 'CloseCaption_Bold', dX, dY, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
-  end
+function GM:InitPostEntity()
+  local myself = LocalPlayer()
+  myself:SetupSharedVars()
+  myself:SetupClientVars()
 end
 
 local function drawHUD()
@@ -106,8 +111,6 @@ local function drawHUD()
   local className = pl:GetPlayerClass()
   if not className or className == '' then return end
   local classInfo = CLASSES[className]
-  if classInfo.Spells then drawSpells(classInfo.Spells) end
-  if not classInfo then return end
   drawHealth(pl:Health(), classInfo.Health)
   if classInfo.Mana then drawMana(pl:GetMana(), classInfo.Mana) end
 end
@@ -116,16 +119,12 @@ function GM:HUDPaint()
   drawHUD()
 end
 
-function GM:CreateVGUI()
-  if not GameStatePanel then self.GameStatePanel = vgui.Create('GameState') end
-end
-
-local function CreateTeamSelect()
+ local function CreateTeamSelect()
   DrawTeamSelect()
 end
 
-local function CreateTeamSelect()
-  DrawTeamSelect()
+function GM:SetupSpellLayout()
+  self.vgui_SpellLayout = vgui.Create('spell_bar')
 end
 
 function GM:HUDShouldDraw(name)
@@ -133,31 +132,26 @@ function GM:HUDShouldDraw(name)
 end
 
 function GM:CreateConCommands()
+  concommand.Add('nox_openteamselect', DrawTeamSelect)
 end
 
-concommand.Add('nox_openteamselect', DrawTeamSelect)
-net.Receive('NOX_TeamUpdate', function()
+local function RecieveNoxTeamUpdate()
   local teamid = net.ReadUInt(4)
   local key = net.ReadString()
   local value = net.ReadInt(32)
-  if TeamInfos[teamid] then
-    TeamInfos[teamid][key] = value
+
+  if GAMEMODE.TeamInfos[teamid] then
+  GAMEMODE.TeamInfos[teamid][key] = value
   else
-    table.insert(TeamInfos, teamid, {
-      [key] = value
-    })
+    table.insert(GAMEMODE.TeamInfos, teamid, {[key] = value})
   end
-
-  if gt_ScoreUI then gt_ScoreUI:UpdateTeamInfo(teamid, key, value) end
-end)
-
-local function SetupCVars()
+  if gt_ScoreUI then
+    gt_ScoreUI:UpdateTeamInfo(teamid, key, value)
+  end
 end
 
-local function SetupVariables()
-  CS_RAGS = {} -- clientside ragdolls using ClientsideRagdoll() must be referenced anyway or else we can't get rid of them.
-  TeamInfos = {}
-end
+net.Receive('NOX_TeamUpdate', RecieveNoxTeamUpdate)
+
 
 local function HandlePlayerDeath()
   local pl = net.ReadPlayer()
@@ -166,17 +160,6 @@ local function HandlePlayerDeath()
 end
 
 local function HandlePlayerSpawn()
-  local pl = net.ReadEntity()
-  local csrag = pl.CSRag
-  if csrag and csrag:IsValid() then
-    csrag:Remove()
-    csrag = nil
-  elseif not csrag then
-    csrag = nil
-  end
-
-  pl.CSRag = csrag
-  local myself = LocalPlayer()
 end
 
 function GM:CalcView(pl, origin, angles, fov)
@@ -184,101 +167,116 @@ function GM:CalcView(pl, origin, angles, fov)
   local angle_calc = angles
   local origin_calc = origin
   local fov_calc = fov
+
   if cld.Enabled then
-    viewtbl = self:CameraLockCalcView()
-    origin_calc = viewtbl.origin
-    angle_calc = viewtbl.angles
-    fov_calc = viewtbl.fov
+  viewtbl = self:CameraLockCalcView()    
+  origin_calc = viewtbl.origin
+  angle_calc = viewtbl.angles
+  fov_calc = viewtbl.fov
   end
-  return {
-    origin = origin_calc,
-    angles = angle_calc,
-    fov = fov_calc,
-    znear = 1,
-    zfar = 50000,
-    true
-  }
-end
+
+  local teamselectoverride = self.TeamSelectOverrideView -- Team select overridden cinematic
+  if self.PanelTeamSelect and self.PanelTeamSelect:IsValid() then
+    if self.teamselectoverride then 
+      local pos = teamselectoverride:GetPos()
+      local rot = teamselectoverride:GetAngles()
+      origin_calc = pos + (pos - original_calc)
+      angle_calc = Add(rot + angle_calc)
+
+    else 
+      local pos = Vector(0, 0, 0)
+      origin_calc = pos
+      angle_calc = angle_zero
+    end
+  end
+
+return {origin = origin_calc, angles = angle_calc, fov = fov_calc, znear = 1, zfar = 50000, true} end
 
 function GM:CameraLockCalcView()
   local cld = self.CameraLockData
-  local finalvect = vector_origin
-  local finalangle = angle_zero
-  if not cld.Orbiting then
-    local loc = cld.Loc
-    local iniloc = cld.IniLoc
-    local rot = cld.Rot
-    local inirot = cld.IniRot
-    local direction = CalculateDirection3D(iniloc, loc)
-    local initialtime = cld.InitialTime
-    local arrivaltime = cld.ArrivalTime
-    local tol = cld.Tolerance
-    local diff = arrivaltime - initialtime
-    local rat = math.min(1, (CurTime() - initialtime) / diff)
-    finalangle = EaseDirection(inirot, direction, rat, 'InOutBack')
-    finalvect = EaseVector(iniloc, loc, rat, 'InOutBack')
-    if finalvect:Distance(loc) <= tol then
-      cld['Orbiting'] = true
-      cld['OrbitingRadius'] = tol
-      cld['OrbitAngle'] = GetOrbitingAngle(finalvect, loc)
-      --cld['OrbitAngle'] = 0
-      cld['IniRot'] = finalangle
+    local finalvect = vector_origin
+    local finalangle = angle_zero
+
+    if not cld.Orbiting then
+      local loc = cld.Loc
+      local iniloc = cld.IniLoc
+      local rot = cld.Rot
+      local inirot = cld.IniRot
+
+      local direction = CalculateDirection3D(iniloc, loc)
+
+      local initialtime = cld.InitialTime
+      local arrivaltime = cld.ArrivalTime
+      local tol = cld.Tolerance
+      local diff = arrivaltime - initialtime
+      local rat = math.min(1, (CurTime() - initialtime) / diff)
+      finalangle = EaseDirection(inirot, direction, rat, 'InOutBack')
+      finalvect = EaseVector(iniloc, loc, rat, 'InOutBack')
+
+      if finalvect:Distance(loc) <= tol then
+        cld['Orbiting'] = true
+        cld['OrbitingRadius'] = tol
+        cld['OrbitAngle'] = GetOrbitingAngle(finalvect, loc)
+        --cld['OrbitAngle'] = 0
+        cld['IniRot'] = finalangle
+
+        self.CameraLockData = cld
+      end
+    else 
+      local loc = cld.Loc
+      local tol = cld.Tolerance
+      local orbitang = cld['OrbitAngle']
+      
+      finalvect, finalangle = Orbit(loc, orbitang, tol)
+      finalangle = finalangle
+      orbitang = orbitang + (0.5 * game.GetTimeScale())
+      cld['OrbitAngle'] = orbitang
       self.CameraLockData = cld
     end
-  else
-    local loc = cld.Loc
-    local tol = cld.Tolerance
-    local orbitang = cld['OrbitAngle']
-    finalvect, finalangle = Orbit(loc, orbitang, tol)
-    finalangle = finalangle
-    orbitang = orbitang + (0.5 * game.GetTimeScale())
-    cld['OrbitAngle'] = orbitang
-    self.CameraLockData = cld
-  end
-  return {
-    origin = finalvect,
-    angles = finalangle,
-    fov = 90
-  }
-end
+    return {origin = finalvect, angles = finalangle, fov = 90} end
+
+
 
 function GM:Initialize()
   self:CreateConCommands()
-  SetupCVars()
-  SetupVariables()
-  self:SendCenterNotify('Test Test One', color_white, 4, '')
-  self:SendCenterNotify('Test Test Two', color_white, 4, '')
-end
+  self:SetupSpellLayout()
+end 
 
 function GM:GameTypeInit()
 end
 
 function GM:InitializeGameType()
+
   local name = net.ReadString()
+  print(name)
   self.GameType = name
   local gtinfo = GAMETYPES[name]
   local folder = gtinfo['Folder']
+
   include('retroredux/gamemode/gametypes/' .. folder .. '/cl_init.lua')
   self:GameTypeInit()
 end
 
 local function InitGameType() -- I have no idea why, but the self constant is lost when it's table (GM) is put in front of a function callback directly in the net library. Adding a local wrapper appears to fix this.
-  gamemode.Call("InitializeGameType")
+gamemode.Call("InitializeGameType")
+
 end
 
 function GM:HandleCameraLockData(camlockdata)
   local myself = LocalPlayer()
-  self.CameraLockData = {
-    Enabled = camlockdata.Enabled,
-    Loc = camlockdata.Loc,
-    IniLoc = myself:GetPos() + myself:GetViewOffset(),
-    Rot = camlockdata.Rot,
-    IniRot = myself:GetAngles(),
-    EaseTime = 2,
-    InitialTime = CurTime(),
-    ArrivalTime = camlockdata.ArrivalTime,
-    Tolerance = camlockdata.Tolerance
-  }
+    self.CameraLockData = {
+
+      Enabled = camlockdata.Enabled,
+      Loc = camlockdata.Loc,
+      IniLoc = myself:GetPos() + myself:GetViewOffset(),
+      Rot = camlockdata.Rot,
+      IniRot = myself:GetAngles(),
+      EaseTime = 2,
+      InitialTime = CurTime(),
+      ArrivalTime = camlockdata.ArrivalTime,
+      Tolerance = camlockdata.Tolerance
+
+    }
 end
 
 local function HandleCameraLockWrap()
@@ -289,6 +287,7 @@ local function HandleCameraLockWrap()
     local y = net.ReadFloat()
     local z = net.ReadFloat()
     local angle = net.ReadAngle()
+
     local arrivtime = net.ReadFloat()
     local orbspeed = net.ReadFloat()
     local useincomingangle = net.ReadBool()
@@ -301,57 +300,109 @@ local function HandleCameraLockWrap()
       OrbitSpeed = orbspeed,
       Tolerance = tol
     }
-
-    if useincomingangle then
-      local myself = LocalPlayer()
-      CamLockData.Rot = CalculateDirection3D(myself:GetPos(), CamLockData.Loc)
+      if useincomingangle then
+      
+        local myself = LocalPlayer()
+        CamLockData.Rot = CalculateDirection3D(myself:GetPos(), CamLockData.Loc)
+      end
+    else
+      CamLockData = { -- Leave empty. if it isn't enabled, no value gets read.
+      } 
     end
-  else
-    CamLockData = {} -- Leave empty. if it isn't enabled, no value gets read.
-  end
-
-  gamemode.Call("HandleCameraLockData", CamLockData)
+    gamemode.Call("HandleCameraLockData", CamLockData)
 end
 
 function GM:CreateRoundResults()
-  if not vgui_RoundResults then
-    vgui_RoundResults = vgui.Create('RoundResults')
-    vgui_RoundResults:Setup(self.RoundEndResults["Winner"])
+  if not GAMEMODE.vgui_RoundResults then
+  GAMEMODE.vgui_RoundResults = vgui.Create('RoundResults')
+  GAMEMODE.vgui_RoundResults:Setup(self.RoundEndResults["Winner"])
+
+  if self.RoundEndResults['Winner'] == LocalPlayer():Team() then
+    gamemode.Call('SendCenterNotify', 'Your team has won!', 'DefaultFontMed', Color(0, 255, 0), 5, 'nox/flagcaptured.ogg', {})
   else
-    vgui_RoundResults:Hide()
+    gamemode.Call('SendCenterNotify', 'Your team has lost.', 'DefaultFontMed', Color(255, 0, 0), 5, 'nox/summonstart.ogg', {})
+  end
+  else
+  GAMEMODE.vgui_RoundResults:Hide()
   end
 end
 
-function GM:SendCenterNotify(str, col, dietime, soundf)
-  if not vgui_NotifyCenter then
-    vgui_NotifyCenter = vgui.Create('NotifyCenter')
-    vgui_NotifyCenter:CreateCenterNotice(str, col, dietime, soundf)
-  else
-    vgui_NotifyCenter:CreateCenterNotice(str, col, dietime, soundf)
-  end
+function GM:SendCenterNotify(str, font, col, dietime, soundf, icontbl)
+    CreateCenterNotice(str, font, col, dietime, soundf, icontbl)
 end
 
 function GM:RecieveRoundResults(winner)
-  self.RoundEndResults["Winner"] = winner
-  self:CreateRoundResults()
+self.RoundEndResults["Winner"] = winner
+self:CreateRoundResults()
 end
 
 local function RecieveRoundResults()
-  local winner = net.ReadUInt(7)
-  print(winner)
-  gamemode.Call('RecieveRoundResults', winner)
+local winner = net.ReadUInt(7)
+print(winner)
+gamemode.Call('RecieveRoundResults', winner)
+
+end
+
+function GM:GameTypeHandleRoundStatusUpdate(status, instant)
+end
+
+function GM:HandleRoundStatusUpdate()
+  local status = net.ReadInt(8)
+  local isinstant = net.ReadBool(instant)
+  gamemode.Call('GameTypeHandleRoundStatusUpdate', status, isinstant)
+
+  if status == -1 then
+    if GAMEMODE.GameStatePanel then
+      GAMEMODE.GameStatePanel:SetObjText('Ending Map...')
+    end
+  end
 end
 
 function GM:RecieveHonorableMention()
-  local mention = net.ReadUInt(6)
-  local pl = net.ReadPlayer()
-  local value = net.ReadInt(32)
-  if vgui_RoundResults and vgui_RoundResults:IsValid() and pl and pl:IsValid() then vgui_RoundResults:AddHonorableMention(pl, mention, value) end
+local mention = net.ReadUInt(6)
+local pl = net.ReadPlayer()
+local value = net.ReadInt(32)
+
+  if GAMEMODE.vgui_RoundResults and GAMEMODE.vgui_RoundResults:IsValid() and pl and pl:IsValid() then
+    GAMEMODE.vgui_RoundResults:AddHonorableMention(pl, mention, value)
+  end
 end
 
+local function HandleSpellCast()
+  local pl = net.ReadPlayer()
+  local spellindex = net.ReadUInt(8)
+
+  local SpellID = GetKeyFromIndex(SPELLS, spellindex)
+  print(SpellID)
+  local spell = SPELLS[SpellID]
+
+  spell:Init(pl)
+end
+
+hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
+  local keyname = input.GetKeyName(button)
+  if GAMEMODE.SPELLBINDS_DEFAULT[keyname] then
+
+    local slot = GAMEMODE.SPELLBINDS_DEFAULT[keyname]
+    local spell = GAMEMODE.vgui_SpellLayout:GetSpellFromSlot(slot)
+    local spellindex = GetKeyIndexFromTable(SPELLS, spell)
+    print(spellindex)
+    if spellindex then
+      net.Start('nox_CastSpell')
+        net.WriteUInt(spellindex, 8)
+      net.SendToServer()
+    end
+  end
+end)
+
 net.Receive('nox_CameraLock', HandleCameraLockWrap)
-net.Receive('nox_GameTypeInit', InitGameType)
-net.Receive('nox_Death', HandlePlayerDeath)
-net.Receive('nox_Spawn', HandlePlayerSpawn)
-net.Receive('nox_PostResults', RecieveRoundResults)
-net.Receive('nox_PostHonorableMention', GM.RecieveHonorableMention)
+
+  net.Receive('nox_GameTypeInit', InitGameType)
+
+  net.Receive('nox_Death', HandlePlayerDeath)
+  net.Receive('nox_Spawn', HandlePlayerSpawn)
+  net.Receive('nox_PostResults', RecieveRoundResults)
+  net.Receive('nox_PostHonorableMention', GM.RecieveHonorableMention)
+  net.Receive('nox_RoundStatus', GM.HandleRoundStatusUpdate)
+
+  net.Receive('nox_CastSpell', HandleSpellCast)

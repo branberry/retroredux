@@ -33,3 +33,8 @@ function CollectiveCameraLock(cameralockdata)
       net.Broadcast()
     end
   end
+
+  function RetrievePostMapData()
+    local data = file.Read('postmapdata.txt', false)
+    datatbl = string.ToTable(data)
+    return datatbl end

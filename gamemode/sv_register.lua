@@ -1,5 +1,5 @@
 function GM:RegisterGameType()
-    local data = file.Read("postmapdata.lua", "DATA")
+    local data = file.Read("postmapdata.txt", "DATA")
     local tbl = {}
     if data then
       tbl = util.JSONToTable(data, false, true)

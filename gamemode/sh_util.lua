@@ -51,6 +51,11 @@ local keys = table.GetKeys(tbl)
 local index = table.KeyFromValue(keys, key)
 return index end
 
+function GetKeyFromIndex(tbl, index)
+    local keys = table.GetKeys(tbl)
+    local key = keys[index]
+    return key end
+
 function GetSpeedAtNormal(Vel, Norm)
 local normalvect = Vel * Norm
 local x, y, z = normalvect:Unpack()

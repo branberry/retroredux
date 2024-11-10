@@ -10,6 +10,7 @@ function GM:RegisterClasses()
 end
 
 function GM:RegisterGameTypeConfigs()
+
   for _, config in pairs(file.Find(GM.FolderName .. '/gamemode/gametypes/*_config.lua', 'LUA')) do -- Loading only the config files. The config files are there to let the gamemode know things like the gametype names and descriptions without actually loading the whole gametype's behavior.
     include('gametypes/' .. config)
     AddCSLuaFile('gametypes/' .. config)
@@ -28,6 +29,18 @@ function GM:RegisterGameTypeConfigs()
   GAMETYPES["ARCH"] = ARCH
   print("GameType Configs Registed")
 end
+function GM:IncludeSpells()
+  for _, SpellFile in pairs(file.Find(GM.FolderName .. '/gamemode/spells/*.lua', 'LUA')) do
+    AddCSLuaFile('spells/' .. SpellFile)
+    include('spells/' .. SpellFile)
+    print(SpellFile)
+  end
+end
+
+function RegisterSpell(id, table)
+SPELLS[id] = table
+end
 
 GM:RegisterClasses()
 GM:RegisterGameTypeConfigs()
+GM:IncludeSpells()

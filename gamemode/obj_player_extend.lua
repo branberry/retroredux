@@ -1,7 +1,16 @@
 -- This file contains custom methods for the Player metatable (or 'class')
 local meta = FindMetaTable('Player')
 if not meta then return end
+
+
 if SERVER then util.AddNetworkString('regen_mana') end
+
+function meta:SetupSharedVars() -- variables that will be predicted or exchanged via server and client.
+  self.RoundStats = {}
+  self.SpellCooldowns = {}
+  self.Statusfx = {}  
+end
+
 function meta:SetPlayerClass(className)
   self:SetNWString('PlayerClass', className)
 end
@@ -64,13 +73,17 @@ function meta:GetStatus(type)
 end
 
 function meta:GiveStatus(Name, Effector, Args)
-  local ent = ents.Create("status_" .. Name)
+
+  local ent = ents.Create("status_".. Name)
   local existingEnt = self:GetStatus(Name)
   if ent:IsValid() then
     ent:Spawn()
-    if Effector then ent:setEffector(Effector) end
+    if Effector then
+      ent:setEffector(Effector)
+    end
     if existingEnt and existingEnt:IsValid() then
       ent:SetPlayer(self, true)
+
     else
       ent:SetPlayer(self, false)
     end
@@ -80,7 +93,9 @@ end
 function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
   local d = DamageInfo()
   d:SetDamage(amount)
-  if type then d:SetDamageType(type) end
+    if type then
+  d:SetDamageType(type)
+    end
   d:SetInflictor(inflictor)
   if attacker and attacker:IsValid() then
     d:SetAttacker(attacker)
@@ -88,26 +103,34 @@ function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
     d:SetAttacker(self)
   end
 
-  local d = DamageInfo()
-  d:SetDamage(amount)
-  d:SetDamageType(type)
-  d:SetInflictor(inflictor)
-  if attacker then
-    d:SetAttacker(attacker)
-  else
-    d:SetAttacker(self)
-  end
 
-  local d = DamageInfo()
-  d:SetDamage(amount)
-  d:SetDamageType(type)
-  d:SetInflictor(inflictor)
-  if attacker then
-    d:SetAttacker(attacker)
-  else
-    d:SetAttacker(self)
-  end
+local d = DamageInfo()
 
-  if damageForce then d:SetDamageForce(damageForce) end
-  self:TakeDamageInfo(d)
+d:SetDamage(amount)
+d:SetDamageType(type)
+d:SetInflictor(inflictor)
+
+if attacker then
+  d:SetAttacker(attacker)
+else
+d:SetAttacker(self)
+end
+
+if damageForce then
+  d:SetDamageForce(damageForce)
+end
+self:TakeDamageInfo(d)
+end
+
+function meta:Reset()
+if SERVER then
+self.RoundStats = {}
+self:SetTeam(0)
+end
+
+end
+
+function meta:AddSpellCooldown(spellid, duration)
+  self.SpellCooldowns[spellid] = CurTime() + duration
+
 end

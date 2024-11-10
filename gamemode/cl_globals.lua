@@ -1,1 +1,23 @@
---Empty
+--[[ Key is the actual KEY code that is pressed, the Value indicates the SLOT index in the spell bar or wheel. 
+NOTE: An underscore behind it means the spell needs to be casted with the SHIFT down, and SHIFT slots have a negative index (e.g. "[-1], [-2]").
+ These together respectively tell the game to recognize what requires shift and what slot is a SHIFT slot.
+ --]]
+GM.SPELLBINDS_DEFAULT = {
+    ['e'] = 1,
+    ['r'] = 2,
+    ['q'] = 3,
+    ['f'] = 4,
+    ['g'] = 5,
+    ['v'] = 6,
+    ['b'] = 7,
+    ['c'] = 8,
+    -- Shift Binds
+    ['_e'] = -1,
+    ['_r'] = -2,
+    ['_q'] = -3,
+    ['_f'] = -4,
+    ['_g'] = -5,
+    ['_v'] = -6,
+    ['_b'] = -7,
+    ['_c'] = -8,
+}
