@@ -8,15 +8,53 @@ local slotsize = ScrW() / 48
 local slots = {}
 
 local function SlotPaint(self, w, h)
-local x, y = self:GetPos()
+    local x, y = self:GetPos()
+    local myself = LocalPlayer()
+    local myspellid = self.SpellID
+    local spellcds = myself.SpellCooldowns
+    local keybind = table.KeyFromValue(GAMEMODE.SPELLBINDS_DEFAULT, self.ID)
 
-    if SPELLS[self.SpellID] then 
-        local spellruneicon = SPELLS[self.SpellID].RuneIcon
+    local a = 255
+    local text_a = 255
+    local textcolor = Color(255, 255,255, 255)
+
+    if SPELLS[myspellid] then 
+        local spellruneicon = SPELLS[myspellid].TABLE.RuneIcon
 
         local runeiconid = surface.GetTextureID(spellruneicon)
 
+        if not input.IsKeyDown(79) and self.ID < 0 then
+            a = 127
+            text_a = 80
+            textcolor = Color(text_a, text_a, text_a, text_a)
+        elseif input.IsKeyDown(79) and self.ID > 0 then
+            a = 127
+            text_a = 80
+            textcolor = Color(text_a, text_a, text_a, text_a)
+        end
+
+        surface.SetDrawColor(255,255,255, a) 
+
+        if spellcds and spellcds[myspellid] then
+        surface.SetDrawColor(255,0,0, a)
         surface.SetTexture(runeiconid)
         surface.DrawTexturedRect(0,0, w, h)
+
+        draw.SimpleTextOutlined(math.ceil(myself.SpellCooldowns[myspellid] - CurTime()), 'DefaultFontMed', w/2, h/2, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+        else
+
+        surface.SetTexture(runeiconid)
+        surface.DrawTexturedRect(0,0, w, h)
+        end
+    end
+
+    if keybind then
+        if self.ID < 0 then
+            local bindwithoutunderscore = string.sub(keybind, 2, #keybind)
+            draw.SimpleTextOutlined(bindwithoutunderscore, 'DefaultFontSmall', w/8, h/1.4, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+        else
+            draw.SimpleTextOutlined(keybind, 'DefaultFontSmall', w/8, h/1.4, textcolor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+        end
     end
 
     surface.SetDrawColor(color_white)
@@ -24,15 +62,12 @@ local x, y = self:GetPos()
 end
 
 function PANEL:Paint(w, h)
-    local x, y = self:GetPos()
-    surface.SetDrawColor(color_white)
-    --surface.DrawOutlinedRect(0, 0, w, h, 2)
 end
 
 function PANEL:Init()
     local spells = GAMEMODE.SpellTables
     local slotcount = GAMEMODE.SpellSlots
-    local slots_halved = math.ceil(slotcount / 2) -- Slot count split into two for NON-SHIFT spells, and SHIFT spells.\
+    local slots_halved = math.ceil(slotcount / 2) -- Slot count split into two for NON-SHIFT spells, and SHIFT spells.
     local slots_quaded = math.ceil(slots_halved / 2)
     local slots_marginquad = ScrW()/48
     local slots_totalmargin_quad = slots_marginquad + (slotsize * slots_quaded)
@@ -46,7 +81,7 @@ function PANEL:Init()
 
         if i <= slots_halved then
             slots[i] = slot
-            print(i)
+            slot.ID = i
             slot:SetSize(slotsize, slotsize)
             if i > slots_quaded then
                 slot:SetPos(((i - 1) * slotsize) + slots_marginquad, slotsize)
@@ -56,15 +91,14 @@ function PANEL:Init()
 
             slot:ShowCloseButton(false)
             slot:SetTitle('')
-
             slot.Paint = SlotPaint
-
         else
             local inverted = (i * -1) + slots_halved -- It's a SHIFT spell so negate the index
             local rebounded = i - slots_halved
             print(rebounded)
 
             slots[inverted] = slot
+            slot.ID = inverted
 
             slot:ShowCloseButton(false)
             slot:SetTitle('')

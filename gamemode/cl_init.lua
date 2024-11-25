@@ -1,11 +1,12 @@
 include('shared.lua')
+include('cl_obj_player_extend.lua')
 
 include('cl_globals.lua')
 include('cl_util.lua')
 include('cl_options.lua')
 
 include('obj_player_extend.lua')
-include('cl_obj_player_extend.lua')
+include('cl_spells_util.lua')
 
 include('vgui/class_select.lua')
 include('vgui/team_select.lua')
@@ -16,6 +17,7 @@ include('vgui/gamestate.lua')
 include('vgui/dm_teamscore.lua')
 include('vgui/roundresults.lua')
 include('vgui/notifycenter.lua')
+include('vgui/statuseffectslayout.lua')
 
 GM.TeamInfos = {}
 GM.TeamSelectViewOverride = ents.FindByName('Map_CinematicCamera')
@@ -33,6 +35,7 @@ GM.CameraLockData = {
 }
 
 GM.SpellTables = {}
+GM.SpellCooldowns = {}
 
 surface.CreateFont('DefaultFontMini', {font = 'Arial', extended = true, size = 14})
 surface.CreateFont('DefaultFontSmall', {font = 'Arial', extended = true, size = 18})
@@ -95,14 +98,23 @@ local function drawHealth(health, maxhealth)
   draw.SimpleTextOutlined(health, 'CloseCaption_Bold', 43 * screens + curX, curY - 33 * screens, COLOR_HEALTH, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
 end
 
+
+function GM:Think()
+  self:PlayerThink()
+end
+
+function GM:PlayerThink()
+  for i, v in ipairs(player.GetAll()) do
+    v:Think()
+  end
+end
+
 local function drawDeadHUD()
 
 end
 
 function GM:InitPostEntity()
   local myself = LocalPlayer()
-  myself:SetupSharedVars()
-  myself:SetupClientVars()
 end
 
 local function drawHUD()
@@ -123,8 +135,9 @@ end
   DrawTeamSelect()
 end
 
-function GM:SetupSpellLayout()
+function GM:SetupVGuiLayout()
   self.vgui_SpellLayout = vgui.Create('spell_bar')
+  self.vgui_SELayout = vgui.Create('SEList')
 end
 
 function GM:HUDShouldDraw(name)
@@ -144,6 +157,7 @@ local function RecieveNoxTeamUpdate()
   GAMEMODE.TeamInfos[teamid][key] = value
   else
     table.insert(GAMEMODE.TeamInfos, teamid, {[key] = value})
+    gamemode.Call('FixTeamColors')
   end
   if gt_ScoreUI then
     gt_ScoreUI:UpdateTeamInfo(teamid, key, value)
@@ -239,7 +253,7 @@ function GM:CameraLockCalcView()
 
 function GM:Initialize()
   self:CreateConCommands()
-  self:SetupSpellLayout()
+  self:SetupVGuiLayout()
 end 
 
 function GM:GameTypeInit()
@@ -372,28 +386,83 @@ local function HandleSpellCast()
   local pl = net.ReadPlayer()
   local spellindex = net.ReadUInt(8)
 
-  local SpellID = GetKeyFromIndex(SPELLS, spellindex)
-  print(SpellID)
-  local spell = SPELLS[SpellID]
+  local spellid = GetKeyFromIndex(SPELLS, spellindex)
+  local spell = SPELLS[spellid]
+  local spelltbl = SPELLS[spellid].TABLE
 
-  spell:Init(pl)
+  pl:ExclaimSpellWords(spellid, 6)
+
+    pl.SpellsActive[spellid] = table.Copy(spell['TABLEVARS'])
+  if pl == LocalPlayer() then
+    pl:SetSpellCooldown(spellid, spelltbl.Cooldown)
+  end
+
+  spelltbl:Init(pl)
+end
+
+local function HandleStatusEffect()
+  local pl = net.ReadEntity()
+  local statusindex = net.ReadUInt(8)
+  local host = net.ReadEntity()
+
+  print(statusindex)
+  local key = GetKeyFromIndex(STATUS_EFFECTS, statusindex)
+  local status = STATUS_EFFECTS[key]
+  local statustbl = status.TABLE
+  local statusvars = status.TABLEVARS
+
+  local vartbl = {}
+
+  if statusvars['Duration'] then 
+    vartbl['Duration'] = net.ReadFloat() 
+  end
+  
+  if statusvars['Effectiveness'] then 
+    vartbl['Effectiveness'] = net.ReadFloat()
+  end
+
+  if statusvars['Frequency'] then 
+    vartbl['Frequency'] = net.ReadFloat()
+  end
+
+  if pl:HasStatus(key) and statustbl.InitExists then
+
+    statustbl:InitExists(pl, host, vartbl)
+  elseif statustbl.Init then
+    pl.StatusEffects[key] = table.Copy(statusvars)
+    statustbl:Init(pl, host, vartbl)
+  end
 end
 
 hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
   local keyname = input.GetKeyName(button)
+  if input.IsKeyDown(79) then 
+    local keyname = '_' .. keyname
+  end
   if GAMEMODE.SPELLBINDS_DEFAULT[keyname] then
 
     local slot = GAMEMODE.SPELLBINDS_DEFAULT[keyname]
     local spell = GAMEMODE.vgui_SpellLayout:GetSpellFromSlot(slot)
     local spellindex = GetKeyIndexFromTable(SPELLS, spell)
-    print(spellindex)
+
     if spellindex then
-      net.Start('nox_CastSpell')
+      local spellinfo = SPELLS[spell]
+      local cooldown = pl.SpellCooldowns[spell]
+
+      if not cooldown then
+        net.Start('nox_CastSpell')
         net.WriteUInt(spellindex, 8)
-      net.SendToServer()
+        net.SendToServer()
+      end
     end
   end
 end)
+
+gameevent.Listen( "player_connect_client" )
+hook.Add( "player_connect_client", "player_connect_client_example", function( data )
+	local index = data.index
+  local ent = Entity(index)
+end )
 
 net.Receive('nox_CameraLock', HandleCameraLockWrap)
 
@@ -406,3 +475,5 @@ net.Receive('nox_CameraLock', HandleCameraLockWrap)
   net.Receive('nox_RoundStatus', GM.HandleRoundStatusUpdate)
 
   net.Receive('nox_CastSpell', HandleSpellCast)
+
+  net.Receive('nox_GiveStatus', HandleStatusEffect)

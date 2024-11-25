@@ -9,12 +9,13 @@ AddCSLuaFile('sh_register.lua')
 AddCSLuaFile('sh_util.lua')
 AddCSLuaFile('sh_translate.lua')
 AddCSLuaFile('obj_player_extend.lua')
-AddCSLuaFile('cl_obj_player_extend.lua')
 
 AddCSLuaFile('cl_globals.lua')
 AddCSLuaFile('cl_util.lua')
 AddCSLuaFile('cl_init.lua')
 AddCSLuaFile('cl_options.lua')
+AddCSLuaFile('cl_obj_player_extend.lua')
+AddCSLuaFile('cl_spells_util.lua')
 
 AddCSLuaFile('vgui/class_select.lua')
 AddCSLuaFile('vgui/team_select.lua')
@@ -23,12 +24,13 @@ AddCSLuaFile('vgui/spell_editor.lua')
 AddCSLuaFile('vgui/spell_bar.lua')
 AddCSLuaFile('vgui/spell_wheel.lua')
 
-
 AddCSLuaFile('vgui/dm_teamscore.lua')
 AddCSLuaFile('vgui/roundresults.lua')
 AddCSLuaFile('vgui/notifycenter.lua')
+AddCSLuaFile('vgui/statuseffectslayout.lua')
 
 include('shared.lua')
+
 include('sv_globals.lua')
 include('sv_register.lua')
 include('sv_util.lua')
@@ -43,6 +45,8 @@ util.AddNetworkString('nox_PostResults')
 util.AddNetworkString('nox_CameraLock')
 util.AddNetworkString('nox_PostHonorableMention')
 util.AddNetworkString('nox_CastSpell')
+
+util.AddNetworkString('nox_GiveStatus')
 
 util.AddNetworkString('nox_Death')
 util.AddNetworkString('nox_Spawn')
@@ -86,7 +90,7 @@ function GM:SpawnTeamInfo()
 end
 
 function GM:InitPostEntity()
-gamemode.Call('SpawnTeamInfo')
+  gamemode.Call('SpawnTeamInfo')
 end
 
 function GM:PlayerSelectSpawn(ply)
@@ -201,6 +205,10 @@ if self.RoundStatus == -1 then
 end
 
 self:GameTypeThink()
+
+  for i, v in ipairs(player.GetAll()) do 
+    v:Think()
+  end
 end
 
 function GM:ShowTeam(pl)
@@ -215,7 +223,6 @@ end
 function GM:PlayerInitialSpawn(pl)
   pl:SetNWString('PlayerClass', '')
   self:FullGameUpdate(pl)
-  pl:SetupServerVars()
 end
 
 function GM:PlayerSpawn(pl)
@@ -227,6 +234,8 @@ function GM:PlayerSpawn(pl)
   local classtbl = CLASSES[pl:GetPlayerClass()]
   if classtbl then
     pl:SetModel(classtbl['Model'])
+    pl:SetWalkSpeed(classtbl['Walkspeed'])
+    pl:SetRunSpeed(classtbl['Walkspeed'])
 
   end
 
@@ -490,13 +499,21 @@ net.Receive('nox_CastSpell', function(len, pl)
 
   local key = GetKeyFromIndex(SPELLS, spellindex)
   local spell = SPELLS[key]
+  local spelltbl = spell.TABLE
   local classtbl = CLASSES[pl:GetPlayerClass()]
-  if spell then
+
+  local cooldown = pl.SpellCooldowns[spell]
+
+  if spell and pl:Alive() and not cooldown then
     net.Start('nox_CastSpell')
     net.WritePlayer(pl)
     net.WriteUInt(spellindex, 8)
     net.Broadcast()
-    
-    spell:Init(pl)
+
+    if spell.TABLEVARS then
+      pl.SpellsActive[key] = table.Copy(spell.TABLEVARS)
+    end
+    pl:SetSpellCooldown(key, spelltbl.Cooldown)
+    spelltbl:Init(pl)
   end
 end)

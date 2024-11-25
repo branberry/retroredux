@@ -37,10 +37,26 @@ function GM:IncludeSpells()
   end
 end
 
-function RegisterSpell(id, table)
-SPELLS[id] = table
+function GM:IncludeStatusEffects()
+  local files, directs = file.Find(GM.FolderName .. '/gamemode/statuseffects/*', 'LUA')
+  for _, directory in pairs(directs) do
+    if SERVER then
+      include('statuseffects/' .. directory .. '/init.lua')
+    else
+      include('statuseffects/' .. directory .. '/cl_init.lua')
+    end
+  end
+end
+
+function RegisterSpell(id, table, vartable)
+  SPELLS[id] = {TABLE = table, TABLEVARS = vartable}
+end
+
+function RegisterStatusEffect(id, table, vartable)
+  STATUS_EFFECTS[id] = {TABLE = table, TABLEVARS = vartable}
 end
 
 GM:RegisterClasses()
 GM:RegisterGameTypeConfigs()
 GM:IncludeSpells()
+GM:IncludeStatusEffects()

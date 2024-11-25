@@ -6,6 +6,8 @@ CLASSES = {}
 
 SPELLS = {}
 
+STATUS_EFFECTS = {}
+
 TEAMS = {
   {
     Name = 'Dun Mir', 

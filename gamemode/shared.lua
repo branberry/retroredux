@@ -12,6 +12,7 @@ include('obj_player_extend.lua')
 GM.GameType = 'DM'
 GM.DisabledSpells = {}
 GM.DisabledClasses = {}
+
 function GM:Initialize()
   -- Do stuff
 end

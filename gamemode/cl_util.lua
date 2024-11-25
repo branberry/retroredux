@@ -25,3 +25,11 @@ function CSRagdollMimickCSRagdoll(rag, mime)
         rag:SetColor(color)
     end
 end
+
+function GetTeamColor(teamnumber) -- until team.GetColor() is fixed.
+    local teamid = TEAMS_PLAYING[teamnumber]
+    local key = GetKeyFromIndex(TEAMS, teamid)
+    local teamtbl = TEAMS[key]
+    if teamtbl then
+        return teamtbl['Color'] end
+end

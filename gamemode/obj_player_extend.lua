@@ -2,14 +2,15 @@
 local meta = FindMetaTable('Player')
 if not meta then return end
 
+-- variables that will be predicted or exchanged via server and client.
+meta.RoundStats = {}
+meta.SpellCooldowns = {}
+meta.SpellsActive = {}
+meta.SpellVars = {} --[[ Instead of doing table.Copy on spell tables to allow for per-instance variables (which is most of the time eating data with redundant constants).
+We let spells define the variables that actually need it using the player's table. --]]
+meta.StatusEffects = {}  
 
 if SERVER then util.AddNetworkString('regen_mana') end
-
-function meta:SetupSharedVars() -- variables that will be predicted or exchanged via server and client.
-  self.RoundStats = {}
-  self.SpellCooldowns = {}
-  self.Statusfx = {}  
-end
 
 function meta:SetPlayerClass(className)
   self:SetNWString('PlayerClass', className)
@@ -90,7 +91,7 @@ function meta:GiveStatus(Name, Effector, Args)
   end
 end
 
-function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
+function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce, normal)
   local d = DamageInfo()
   d:SetDamage(amount)
     if type then
@@ -117,7 +118,7 @@ d:SetAttacker(self)
 end
 
 if damageForce then
-  d:SetDamageForce(damageForce)
+  d:SetDamageForce(normal * damageForce)
 end
 self:TakeDamageInfo(d)
 end
@@ -131,6 +132,14 @@ end
 end
 
 function meta:AddSpellCooldown(spellid, duration)
-  self.SpellCooldowns[spellid] = CurTime() + duration
+  self.SpellCooldowns[spellid] = self.SpellCooldowns[spellid]  + duration
+end
 
+function meta:SetSpellCooldown(spellid, duration)
+  self.SpellCooldowns[spellid] = CurTime() + duration
+end
+
+function meta:HasStatus(id)
+  if self.StatusEffects[id] then
+  return true else return false end
 end

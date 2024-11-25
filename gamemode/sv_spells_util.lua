@@ -2,7 +2,8 @@ function CalculateAOE(pos, radius, fallofffunc) -- Quicker way to do areal effec
     local effect = {}
 
     for i, v in pairs(ents.FindInSphere(pos, radius)) do
-        local distsqr = v:DistToSqr(pos)
+        local entdist = v:GetPos()
+        local distsqr = entdist:DistToSqr(pos)
         local radsqr = radius^2
 
         local ratio = 1 - (distsqr / radsqr)

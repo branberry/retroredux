@@ -21,3 +21,15 @@ GM.SPELLBINDS_DEFAULT = {
     ['_b'] = -7,
     ['_c'] = -8,
 }
+
+GM.SPELLWORDS = {
+
+    ['cha'] = 'nox/cha2.ogg',
+    ['du'] = 'nox/du2.ogg',
+    ['et'] = 'nox/et2.ogg',
+    ['in'] = 'nox/in2.ogg',
+    ['ka'] = 'nox/ka2.ogg',
+    ['ru'] = 'nox/ru2.ogg',
+    ['un'] = 'nox/un2.ogg',
+    ['zo'] = 'nox/zo2.ogg',
+}
