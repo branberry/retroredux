@@ -1,10 +1,12 @@
 include('shared.lua')
 
 function STATUS:Init(pl, host, varargs)
-local status = pl.StatusEffects['STATUS_BLEED']
+    local status = pl.StatusEffects['STATUS_BLEED']
+
     if varargs.Duration then
         status.DieTime = CurTime() + varargs.Duration
-        else status.DieTime = CurTime() + 2 end
+        status.Duration = varargs.Duration
+    else status.DieTime = CurTime() + 2 end
 
     if varargs.Effectiveness then
         status.Effectiveness = varargs.Effectiveness
@@ -14,16 +16,15 @@ local status = pl.StatusEffects['STATUS_BLEED']
         status.Frequency = varargs.Frequency
     end
 
-    status.Host = host
-    status.NextHit = CurTime() + 1/status.Frequency
+    varargs.NextHit = CurTime() + 1/status.Frequency
 end
-
 
 function STATUS:InitExists(pl, host, varargs)
     local status = pl.StatusEffects['STATUS_BLEED']
     
     if varargs.Duration then
         status.DieTime = status.DieTime + varargs.Duration/2
+        status.Duration = status.Duration + varargs.Duration
     end
 
     if varargs.Frequency then

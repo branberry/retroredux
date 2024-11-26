@@ -1,8 +1,8 @@
 STATUS = {
     Name = 'Bleed',
-    Abrev = 'BLE',
+    Abrev = 'BLEED',
     Color = Color(255, 0, 0),
-    Icon = ''
+    Icon = 'retroteamplay/vgui/statuses/status_bleed.vmt'
 }
 
 STATUSVARS = {

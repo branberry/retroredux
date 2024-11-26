@@ -49,7 +49,6 @@ util.AddNetworkString('nox_CastSpell')
 util.AddNetworkString('nox_GiveStatus')
 
 util.AddNetworkString('nox_Death')
-util.AddNetworkString('nox_Spawn')
 
 GM.LerpTimeScale = {
   ShouldLerp = false,
@@ -228,7 +227,9 @@ end
 function GM:PlayerSpawn(pl)
   print('player spawned')
   pl.NextRespawn = nil
-
+  if pl.StatusEffects then
+    table.Empty(pl.StatusEffects)
+  end
   if pl:GetPlayerClass() == 'MAGE' then pl:Give('weapon_magewand') end
 
   local classtbl = CLASSES[pl:GetPlayerClass()]
@@ -252,10 +253,6 @@ function GM:PlayerSpawn(pl)
       end
     end
   end
-
-  net.Start('Nox_Spawn')
-  net.WriteEntity(pl)
-  net.Broadcast()
 end
 
 function GM:GetPostMapData()

@@ -173,7 +173,12 @@ local function HandlePlayerDeath()
   gamemode.Call('HandlePlayerDeath', pl, attacker)
 end
 
-local function HandlePlayerSpawn()
+local function HandlePlayerSpawn(data)
+  local pl = Player(data.userid)
+
+  if pl.StatusEffects then
+    table.Empty(pl.StatusEffects)
+  end
 end
 
 function GM:CalcView(pl, origin, angles, fov)
@@ -458,18 +463,16 @@ hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
   end
 end)
 
-gameevent.Listen( "player_connect_client" )
-hook.Add( "player_connect_client", "player_connect_client_example", function( data )
-	local index = data.index
-  local ent = Entity(index)
-end )
+gameevent.Listen( "player_spawn" )
+hook.Add( "player_spawn", "gm_player_spawn", function( data ) 
+  HandlePlayerSpawn(data)
+end)
 
 net.Receive('nox_CameraLock', HandleCameraLockWrap)
 
   net.Receive('nox_GameTypeInit', InitGameType)
 
   net.Receive('nox_Death', HandlePlayerDeath)
-  net.Receive('nox_Spawn', HandlePlayerSpawn)
   net.Receive('nox_PostResults', RecieveRoundResults)
   net.Receive('nox_PostHonorableMention', GM.RecieveHonorableMention)
   net.Receive('nox_RoundStatus', GM.HandleRoundStatusUpdate)

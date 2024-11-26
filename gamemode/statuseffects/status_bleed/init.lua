@@ -7,6 +7,7 @@ function STATUS:Init(pl, host, varargs)
 
     if varargs.Duration then
         status.DieTime = CurTime() + varargs.Duration
+        status.Duration = varargs.Duration
     else status.DieTime = CurTime() + 2 end
 
     if varargs.Effectiveness then
@@ -25,6 +26,7 @@ function STATUS:InitExists(pl, host, varargs)
     
     if varargs.Duration then
         status.DieTime = status.DieTime + varargs.Duration/2
+        status.Duration = status.Duration + varargs.Duration
     end
 
     if varargs.Frequency then

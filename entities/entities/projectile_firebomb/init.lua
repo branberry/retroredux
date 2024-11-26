@@ -48,7 +48,7 @@ function ENT:Explode()
 			local dmg = 64 * v.fo
 			local force = 10240 * v.fo
 			v.ent:TakeSpecialDamage(dmg, DMG_GENERIC, owner, self, force, Vector(1, 0, 0))
-			v.ent:GiveStatus(self:GetOwner(), 'STATUS_BLEED', 32, 1, 1)
+			v.ent:GiveStatus(self:GetOwner(), 'STATUS_BLEED', 4, 1, 1)
 		end
 	end
 	self:Remove()
