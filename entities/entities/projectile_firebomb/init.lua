@@ -35,19 +35,23 @@ function ENT:PhysicsCollide(data, phys)
 end
 
 function ENT:Explode()
-	util.ScreenShake(self:GetPos(), 555, 256, 0.1, 752, false)
+	local mypos = self:GetPos()
+	util.ScreenShake(mypos, 555, 256, 0.1, 752, false)
 	local effectdata = EffectData()
-		effectdata:SetOrigin(self:GetPos())
+		effectdata:SetOrigin(mypos)
 	util.Effect("HelicopterMegaBomb", effectdata)
 	local owner = self:GetOwner()
 
 	local victims = CalculateAOE(self:GetPos(), 512, 'InSine')
+
 	for i, v in pairs(victims) do
 		local pl = Entity(v.ent:EntIndex())
+
 		if v.ent:IsPlayer() and (v.ent:Team() != owner:Team() or v.ent == owner) then
-			local dmg = 64 * v.fo
-			local force = 10240 * v.fo
-			v.ent:TakeSpecialDamage(dmg, DMG_GENERIC, owner, self, force, Vector(1, 0, 0))
+
+			local dmg = 4464 * v.fo
+			local force = (dmg * 100) * NormalBetween(mypos, v.ent:GetPos())
+			v.ent:TakeSpecialDamage(dmg, DMG_GENERIC, owner, self, force)
 			v.ent:GiveStatus(self:GetOwner(), 'STATUS_BLEED', 4, 1, 1)
 		end
 	end

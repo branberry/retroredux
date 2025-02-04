@@ -10,6 +10,8 @@ meta.SpellVars = {} --[[ Instead of doing table.Copy on spell tables to allow fo
 We let spells define the variables that actually need it using the player's table. --]]
 meta.StatusEffects = {}  
 
+local PTeam = meta.Team
+
 if SERVER then util.AddNetworkString('regen_mana') end
 
 function meta:SetPlayerClass(className)
@@ -32,7 +34,7 @@ function meta:GetMana()
     self.ManaRegenTime = ct + 5
     updatedMana = math.Clamp(updatedMana + self:GetManaRegeneration(), 0, self:GetMaxMana())
     print('manaregenTime', self.ManaRegenTime)
-    print('curTime', ct)
+    ('curTime', ct)
     print('regen mana size', self:GetManaRegeneration())
     -- we want to send an update to the server
     -- so that the updated value sticks
@@ -91,25 +93,25 @@ function meta:GiveStatus(Name, Effector, Args)
   end
 end
 
-function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce, normal)
+function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
+  if CLIENT then return end
   local d = DamageInfo()
   d:SetDamage(amount)
     if type then
   d:SetDamageType(type)
     end
-  d:SetInflictor(inflictor)
   if attacker and attacker:IsValid() then
     d:SetAttacker(attacker)
-  else
-    d:SetAttacker(self)
-  end
+  else d:SetAttacker(self) end
 
+  if inflictor then
+    d:SetInflictor(inflictor)
+    else d:SetInflictor(game.GetWorld()) end
 
 local d = DamageInfo()
 
 d:SetDamage(amount)
 d:SetDamageType(type)
-d:SetInflictor(inflictor)
 
 if attacker then
   d:SetAttacker(attacker)
@@ -118,9 +120,11 @@ d:SetAttacker(self)
 end
 
 if damageForce then
-  d:SetDamageForce(normal * damageForce)
+  d:SetDamageForce(damageForce)
 end
-self:TakeDamageInfo(d)
+  self:TakeDamageInfo(d)
+
+  gamemode.Call('FloatingScore', attacker, self, 0, amount)
 end
 
 function meta:Reset()
@@ -128,11 +132,10 @@ if SERVER then
 self.RoundStats = {}
 self:SetTeam(0)
 end
-
 end
 
 function meta:AddSpellCooldown(spellid, duration)
-  self.SpellCooldowns[spellid] = self.SpellCooldowns[spellid]  + duration
+  self.SpellCooldowns[spellid] = self.SpellCooldowns[spellid] + duration
 end
 
 function meta:SetSpellCooldown(spellid, duration)
@@ -141,5 +144,45 @@ end
 
 function meta:HasStatus(id)
   if self.StatusEffects[id] then
-  return true else return false end
+  return true else return end
+end
+
+local temp_attacker = NULL
+local temp_attacker_team = -1
+
+local function MeleeTraceFilter(ent)
+  if ent:IsPlayer() and not (PTeam(ent) == PTeam(temp_attacker)) then
+    return true 
+  else return false end
+end
+
+function meta:MeleeTrace(range, size)
+	local start = start or self:GetShootPos()
+	local dir = dir or self:GetAimVector()
+
+  temp_attacker = self
+
+  meleetrace = {
+    start = start,
+    endpos = start + dir * range,
+    mins = Vector(-size, -size, -size),
+    maxs = Vector(size, size, size),
+    filter = MeleeTraceFilter,
+    mask = MASK_SOLID}
+
+
+  local tl = util.TraceLine(meleetrace) -- Do traceline incase hull isn't necessary.
+
+  if tl.Hit then
+    return tl
+  end
+    
+  return util.TraceHull(meleetrace) end
+
+function meta:CalcMainActivity()
+end
+
+function meta:DamageImpact(data)
+  local act = GAMEMODE.FlinchGestures[data.HitGroup]
+  self:AnimRestartGesture(4, act, true)
 end

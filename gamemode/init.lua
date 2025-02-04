@@ -8,6 +8,8 @@ AddCSLuaFile('sh_globals.lua')
 AddCSLuaFile('sh_register.lua')
 AddCSLuaFile('sh_util.lua')
 AddCSLuaFile('sh_translate.lua')
+AddCSLuaFile('sh_anim.lua')
+AddCSLuaFile('obj_entity_extend.lua')
 AddCSLuaFile('obj_player_extend.lua')
 
 AddCSLuaFile('cl_globals.lua')
@@ -46,6 +48,8 @@ util.AddNetworkString('nox_CameraLock')
 util.AddNetworkString('nox_PostHonorableMention')
 util.AddNetworkString('nox_CastSpell')
 
+util.AddNetworkString('FloatingScore')
+
 util.AddNetworkString('nox_GiveStatus')
 
 util.AddNetworkString('nox_Death')
@@ -65,6 +69,10 @@ self:SetupVars()
 
 
 self:GameTypeInit()
+end
+
+function GM:PlayerLoadout(ply)
+    return true
 end
 
 function GM:SetupVars()
@@ -156,8 +164,7 @@ function GM:FullGameUpdate(pl) -- Updates the naive client with round informatio
     pl:ConCommand('nox_openteamselect')
     
   else
-
-    TeamSelected(pl, 'nox_teamswitch', {'' .. math.random(1, #teams)})
+    TeamSelected(pl, 'nox_teamswitch', {'' .. 1}) -- math.random(1, #teams)
     pl:SetPlayerClass(table.Random(table.GetKeys(CLASSES)))
   end
 end
@@ -174,6 +181,14 @@ function GM:RestartRound()
     v:Reset()
     self:FullGameUpdate(v)
   end
+end
+
+function GM:FloatingScore(pl, victim, type, amount)
+  net.Start('FloatingScore')
+    net.WriteEntity(victim)
+    net.WriteUInt(type, 2) -- 0 -> damage | 1 -> healing | 2 -> N/A | 3 - N/A
+    net.WriteUInt(amount, 16)
+  net.Send(pl)
 end
 
 function GM:PlayerDeathThink(pl)
@@ -230,13 +245,24 @@ function GM:PlayerSpawn(pl)
   if pl.StatusEffects then
     table.Empty(pl.StatusEffects)
   end
-  if pl:GetPlayerClass() == 'MAGE' then pl:Give('weapon_magewand') end
 
   local classtbl = CLASSES[pl:GetPlayerClass()]
   if classtbl then
     pl:SetModel(classtbl['Model'])
     pl:SetWalkSpeed(classtbl['Walkspeed'])
     pl:SetRunSpeed(classtbl['Walkspeed'])
+    
+    local hands = ents.Create('rtp_hands')
+    if hands:IsValid() then
+      hands:Spawn()
+      hands:DoSetup(pl)
+    end
+    local loadout = classtbl.DefaultLoadout
+    if loadout then
+      for i, v in ipairs(loadout) do
+        pl:Give(v)
+      end
+    end
 
   end
 
@@ -250,8 +276,19 @@ function GM:PlayerSpawn(pl)
           pl:SetPlayerColor(Vector(teamcolor.r/255, teamcolor.g/255, teamcolor.b/255))
         else
           pl:SetColor(teamcolor)
+        end
       end
     end
+end
+function GM:PlayerSetHandsModel( ply, ent )
+  local simplemodel = player_manager.TranslateToPlayerModelName(ply:GetModel())
+  local info = player_manager.TranslatePlayerHands(simplemodel)
+  if info then
+     ent:SetModel(info.model)
+     ent:SetSkin(info.skin)
+     ent:SetBodyGroups(info.body)
+  else
+    ent:SetModel('models/weapons/c_arms_citizen.mdl')
   end
 end
 
@@ -390,7 +427,7 @@ function GM:PostHonorableMention()
     net.WriteInt(value, 32) -- Honorable mentions are typically measurable in some way, so in theory it should only depend on a single number that we can send. We'll keep these set of vars constant for now.
     net.Broadcast()
 
-    self.CurrentHM = self.CurrentHM + 1 -- Prevents a Net Buffer Overflow (which is rare) by only sending a couple honorable mentions within a second, incase we add lots of potential honorable mentions. Also adds a bit of life to the UI.
+    self.CurrentHM = self.CurrentHM + 1 --  only sending a couple honorable mentions within a second, incase we add lots of potential honorable mentions. Also adds a bit of life to the UI.
     self.NextHM = CurTime() + 0.5
 
   else self.SendingHMs = false end
@@ -468,10 +505,8 @@ function GM:DoPlayerDeath(pl, attacker, dmginfo)
   pl:CreateRagdoll()
 
   net.Start('nox_Death')
-
   net.WritePlayer(pl)
   net.WriteEntity(attacker)
-  
 net.Broadcast()
 
   self:GameTypeDoPlayerDeath(pl, attacker, dmginfo)

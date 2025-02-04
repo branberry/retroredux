@@ -53,3 +53,23 @@ function meta:Think()
         end
     end
 end
+
+function meta:OnRemove()
+    local vm = self:GetViewModel()
+    if self.hands then
+        self.hands:Remove()
+    end
+    if vm and vm.hands then
+        vm.hands:Remove()
+    end
+
+end
+
+function meta:FloatingScore(type, amount)
+    local eff = EffectData()
+    eff:SetFlags(type)
+    eff:SetMagnitude(amount)
+    eff:SetEntity(self)
+    
+    util.Effect('floater', eff)
+end

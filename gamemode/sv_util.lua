@@ -1,3 +1,10 @@
+function INC_SERVER()
+  include('shared.lua')
+  
+  AddCSLuaFile('shared.lua')
+  AddCSLuaFile('cl_init.lua')
+end
+
 function CollectiveCameraLock(cameralockdata)
     local cld = cameralockdata
     if cld.Enabled then
@@ -14,7 +21,7 @@ function CollectiveCameraLock(cameralockdata)
       local tol = cld.Tolerance
   
       net.WriteBool(true)
-      -- net.WriteVector() imposes a possible imprecisision that might be an issue. so lets use net.WriteFloat. We can revert this if it's too much.
+      -- net.WriteVector() imposes a possible imprecisision due to being 16-bits, so that might be an issue. Lets use net.WriteFloat.
       net.WriteFloat(x)
       net.WriteFloat(y)
       net.WriteFloat(z)

@@ -1,3 +1,7 @@
+function INC_CLIENT()
+    include('shared.lua')
+end
+
 function GetRandomBonePos(ent)
 
     local count = ent:GetBoneCount()

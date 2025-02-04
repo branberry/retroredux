@@ -66,3 +66,12 @@ function BounceVelocityByNormal(Vel, Norm, Damping)
 
 local bouncedvelnorm = (1/(1 + Damping)) * (Vel * (Norm * -1))
 return bouncedvelnorm end
+
+function NormalBetween(vec1, vec2)
+    local n = vec2 - vec1
+    n:Normalize()
+    return n end
+
+function GetSpeedByDuration(d1, d2)
+    local s = (d1 / d2)
+return s end

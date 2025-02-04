@@ -124,3 +124,13 @@ GM.RoundStatus = 0
 
 GM.SpellSlots = 16
 
+GM.FlinchGestures = { -- Key is Enum HITGROUP, value is Enum ACT
+  [0] = ACT_FLINCH,
+  [1] = ACT_FLINCH_CHEST,
+  [2] = ACT_FLINCH_HEAD, ACT_GESTURE_FLINCH_HEAD,
+  [3] = ACT_FLINCH_STOMACH,
+  [4] = ACT_FLINCH_LEFTARM,
+  [5] = ACT_FLINCH_RIGHTARM,
+  [6] = ACT_FLINCH_LEFTLEG,
+  [7] = ACT_FLINCH_LEFTLEG
+}

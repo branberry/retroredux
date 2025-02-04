@@ -174,11 +174,23 @@ local function HandlePlayerDeath()
 end
 
 local function HandlePlayerSpawn(data)
+  local myself = LocalPlayer()
   local pl = Player(data.userid)
 
   if pl.StatusEffects then
     table.Empty(pl.StatusEffects)
   end
+end
+
+function GM:PostDrawViewModel( vm, ply, weapon )
+
+	if ( weapon.UseHands || !weapon:IsScripted() ) then
+
+		local hands = LocalPlayer():GetHands()
+		if ( IsValid( hands ) ) then hands:DrawModel() end
+
+	end
+
 end
 
 function GM:CalcView(pl, origin, angles, fov)
@@ -296,6 +308,16 @@ function GM:HandleCameraLockData(camlockdata)
       Tolerance = camlockdata.Tolerance
 
     }
+end
+
+local function HandleFloatingScore()
+  local ent = net.ReadEntity()
+  local type = net.ReadUInt(2)
+  local amount = net.ReadUInt(16)
+
+  if ent and ent:IsValid() then
+    ent:FloatingScore(type, amount)
+  end
 end
 
 local function HandleCameraLockWrap()
@@ -480,3 +502,5 @@ net.Receive('nox_CameraLock', HandleCameraLockWrap)
   net.Receive('nox_CastSpell', HandleSpellCast)
 
   net.Receive('nox_GiveStatus', HandleStatusEffect)
+
+  net.Receive('FloatingScore', HandleFloatingScore)
