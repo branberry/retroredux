@@ -7,6 +7,8 @@ include('cl_options.lua')
 
 include('obj_player_extend.lua')
 include('cl_spells_util.lua')
+include('cl_register.lua')
+include('cl_view.lua')
 
 include('vgui/class_select.lua')
 include('vgui/team_select.lua')
@@ -17,8 +19,15 @@ include('vgui/gamestate.lua')
 include('vgui/dm_teamscore.lua')
 include('vgui/roundresults.lua')
 include('vgui/notifycenter.lua')
+include('vgui/dch_melee1.lua')
+
+include('cl_hud.lua')
+
+
 include('vgui/statuseffectslayout.lua')
 
+local SPELL_SLOTS = {}
+model2 = nil
 GM.TeamInfos = {}
 GM.TeamSelectViewOverride = ents.FindByName('Map_CinematicCamera')
 
@@ -34,71 +43,7 @@ GM.CameraLockData = {
   ArrivalTime = CurTime()
 }
 
-GM.SpellTables = {}
 GM.SpellCooldowns = {}
-
-surface.CreateFont('DefaultFontMini', {font = 'Arial', extended = true, size = 14})
-surface.CreateFont('DefaultFontSmall', {font = 'Arial', extended = true, size = 18})
-surface.CreateFont('DefaultFontMed', {font = 'Arial', extended = true, size = 32})
-surface.CreateFont('DefaultFontLarge', {font = 'Arial', extended = true, size = 64})
-surface.CreateFont('DefaultFontVeryLarge', {font = 'Arial', extended = true, size = 92})
-
-local SPELL_SLOTS = {}
-local hud_NBarX = CreateClientConVar('nox_hud_nbar_x', 0, true, false)
-local hud_NBarY = CreateClientConVar('nox_hud_nbar_y', 1, true, false)
-local background = surface.GetTextureID('noxctf/bar_background')
-local health_back = surface.GetTextureID('noxctf/health_bar_back')
-local health_bar = surface.GetTextureID('noxctf/health_bar')
-local mana_back = surface.GetTextureID('noxctf/mana_bar_back')
-local mana_bar = surface.GetTextureID('noxctf/mana_bar')
-local hud_SpellMenuX = CreateClientConVar('nox_hud_spellmenu_x', 0.85, true, false)
-local hud_SpellMenuY = CreateClientConVar('nox_hud_spellmenu_y', 0.7, true, false)
-local COLOR_HEALTH = Color(240, 60, 60, 255)
-local COLOR_MANA = Color(144, 210, 248, 255)
-
-local function drawMana(mana, maxMana)
-  local w, h = ScrW(), ScrH()
-  local curX = hud_NBarX:GetFloat() * w
-  local curY = hud_NBarY:GetFloat() * h
-  local screens = math.min(1, ((w / 3640) + 0.5) ^ 2) --BetterScreenScale()
-  local imagesizey = 128 * screens
-  local imagesizex = 512 * screens
-  surface.SetDrawColor(255, 255, 255, 255)
-  surface.SetTexture(mana_back)
-  surface.DrawTexturedRect(curX, curY - imagesizey, imagesizex, imagesizey)
-  surface.SetTexture(mana_bar)
-  if mana < maxMana * 0.25 then
-    COLOR_HEALTH.a = 255 - math.abs(math.sin(RealTime() * 4)) * 160
-    surface.SetDrawColor(COLOR_HEALTH)
-  end
-
-  surface.DrawTexturedRectUV(curX + (imagesizex / 8), curY - imagesizey, curX + (imagesizex / 1.45868945869) * (mana / maxMana), imagesizey, 0.125, 0, 0.125 + 0.685546875 * (mana / maxMana), 1)
-  draw.SimpleTextOutlined(math.floor(mana), 'CloseCaption_Bold', 25 * screens + curX, curY - 68 * screens, COLOR_MANA, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
-end
-
-local function drawHealth(health, maxhealth)
-  local w, h = ScrW(), ScrH()
-  local curX = hud_NBarX:GetFloat() * w
-  local curY = hud_NBarY:GetFloat() * h
-  local screens = math.min(1, ((w / 3640) + 0.5) ^ 2) --BetterScreenScale()
-  local imagesizey = 128 * screens
-  local imagesizex = 512 * screens
-  surface.SetDrawColor(255, 255, 255, 255)
-  surface.SetTexture(background)
-  surface.DrawTexturedRect(curX, curY - imagesizey, imagesizex, imagesizey)
-  surface.SetTexture(health_back)
-  surface.DrawTexturedRect(curX, curY - imagesizey, imagesizex, imagesizey)
-  if health < maxhealth * 0.25 then
-    COLOR_HEALTH.a = 255 - math.abs(math.sin(RealTime() * 4)) * 160
-    surface.SetDrawColor(COLOR_HEALTH)
-  end
-
-  surface.SetTexture(health_bar)
-  surface.DrawTexturedRectUV(curX + (imagesizex * 0.185546875), curY - imagesizey, curX + (imagesizex / 1.38378378378) * (health / maxhealth), imagesizey, 0.185546875, 0, 0.185546875 + 0.72265625 * (health / maxhealth), 1)
-  draw.SimpleTextOutlined(health, 'CloseCaption_Bold', 43 * screens + curX, curY - 33 * screens, COLOR_HEALTH, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, 255))
-end
-
-
 function GM:Think()
   self:PlayerThink()
 end
@@ -115,20 +60,7 @@ end
 
 function GM:InitPostEntity()
   local myself = LocalPlayer()
-end
-
-local function drawHUD()
-  local pl = LocalPlayer()
-  if not pl:Alive() then drawDeadHUD() end
-  local className = pl:GetPlayerClass()
-  if not className or className == '' then return end
-  local classInfo = CLASSES[className]
-  drawHealth(pl:Health(), classInfo.Health)
-  if classInfo.Mana then drawMana(pl:GetMana(), classInfo.Mana) end
-end
-
-function GM:HUDPaint()
-  drawHUD()
+  self.vgui_SpellLayout = vgui.Create('spell_bar')
 end
 
  local function CreateTeamSelect()
@@ -136,7 +68,6 @@ end
 end
 
 function GM:SetupVGuiLayout()
-  self.vgui_SpellLayout = vgui.Create('spell_bar')
   self.vgui_SELayout = vgui.Create('SEList')
 end
 
@@ -166,20 +97,14 @@ end
 
 net.Receive('NOX_TeamUpdate', RecieveNoxTeamUpdate)
 
-
 local function HandlePlayerDeath()
   local pl = net.ReadPlayer()
   local attacker = net.ReadEntity()
   gamemode.Call('HandlePlayerDeath', pl, attacker)
 end
 
-local function HandlePlayerSpawn(data)
-  local myself = LocalPlayer()
-  local pl = Player(data.userid)
-
-  if pl.StatusEffects then
-    table.Empty(pl.StatusEffects)
-  end
+local function HandlePlayerSetup()
+  local pl = net.ReadPlayer()
 end
 
 function GM:PostDrawViewModel( vm, ply, weapon )
@@ -193,84 +118,11 @@ function GM:PostDrawViewModel( vm, ply, weapon )
 
 end
 
-function GM:CalcView(pl, origin, angles, fov)
-  local cld = self.CameraLockData
-  local angle_calc = angles
-  local origin_calc = origin
-  local fov_calc = fov
-
-  if cld.Enabled then
-  viewtbl = self:CameraLockCalcView()    
-  origin_calc = viewtbl.origin
-  angle_calc = viewtbl.angles
-  fov_calc = viewtbl.fov
-  end
-
-  local teamselectoverride = self.TeamSelectOverrideView -- Team select overridden cinematic
-  if self.PanelTeamSelect and self.PanelTeamSelect:IsValid() then
-    if self.teamselectoverride then 
-      local pos = teamselectoverride:GetPos()
-      local rot = teamselectoverride:GetAngles()
-      origin_calc = pos + (pos - original_calc)
-      angle_calc = Add(rot + angle_calc)
-
-    else 
-      local pos = Vector(0, 0, 0)
-      origin_calc = pos
-      angle_calc = angle_zero
-    end
-  end
-
-return {origin = origin_calc, angles = angle_calc, fov = fov_calc, znear = 1, zfar = 50000, true} end
-
-function GM:CameraLockCalcView()
-  local cld = self.CameraLockData
-    local finalvect = vector_origin
-    local finalangle = angle_zero
-
-    if not cld.Orbiting then
-      local loc = cld.Loc
-      local iniloc = cld.IniLoc
-      local rot = cld.Rot
-      local inirot = cld.IniRot
-
-      local direction = CalculateDirection3D(iniloc, loc)
-
-      local initialtime = cld.InitialTime
-      local arrivaltime = cld.ArrivalTime
-      local tol = cld.Tolerance
-      local diff = arrivaltime - initialtime
-      local rat = math.min(1, (CurTime() - initialtime) / diff)
-      finalangle = EaseDirection(inirot, direction, rat, 'InOutBack')
-      finalvect = EaseVector(iniloc, loc, rat, 'InOutBack')
-
-      if finalvect:Distance(loc) <= tol then
-        cld['Orbiting'] = true
-        cld['OrbitingRadius'] = tol
-        cld['OrbitAngle'] = GetOrbitingAngle(finalvect, loc)
-        --cld['OrbitAngle'] = 0
-        cld['IniRot'] = finalangle
-
-        self.CameraLockData = cld
-      end
-    else 
-      local loc = cld.Loc
-      local tol = cld.Tolerance
-      local orbitang = cld['OrbitAngle']
-      
-      finalvect, finalangle = Orbit(loc, orbitang, tol)
-      finalangle = finalangle
-      orbitang = orbitang + (0.5 * game.GetTimeScale())
-      cld['OrbitAngle'] = orbitang
-      self.CameraLockData = cld
-    end
-    return {origin = finalvect, angles = finalangle, fov = 90} end
-
-
-
 function GM:Initialize()
   self:CreateConCommands()
   self:SetupVGuiLayout()
+  timer.Simple(1, function()
+  self:ModelCache() end)
 end 
 
 function GM:GameTypeInit()
@@ -293,21 +145,11 @@ gamemode.Call("InitializeGameType")
 
 end
 
-function GM:HandleCameraLockData(camlockdata)
-  local myself = LocalPlayer()
-    self.CameraLockData = {
-
-      Enabled = camlockdata.Enabled,
-      Loc = camlockdata.Loc,
-      IniLoc = myself:GetPos() + myself:GetViewOffset(),
-      Rot = camlockdata.Rot,
-      IniRot = myself:GetAngles(),
-      EaseTime = 2,
-      InitialTime = CurTime(),
-      ArrivalTime = camlockdata.ArrivalTime,
-      Tolerance = camlockdata.Tolerance
-
-    }
+function GM:ResetClassUI(args)
+  local pl = LocalPlayer()
+  if args['class'] then
+    GAMEMODE.vgui_SpellLayout:ResetClassLayout(args['class'])
+  end
 end
 
 local function HandleFloatingScore()
@@ -318,39 +160,6 @@ local function HandleFloatingScore()
   if ent and ent:IsValid() then
     ent:FloatingScore(type, amount)
   end
-end
-
-local function HandleCameraLockWrap()
-  local enabled = net.ReadBool()
-  local CamLockData = {}
-  if enabled then
-    local x = net.ReadFloat()
-    local y = net.ReadFloat()
-    local z = net.ReadFloat()
-    local angle = net.ReadAngle()
-
-    local arrivtime = net.ReadFloat()
-    local orbspeed = net.ReadFloat()
-    local useincomingangle = net.ReadBool()
-    local tol = net.ReadUInt(10)
-    CamLockData = {
-      Enabled = true,
-      Loc = Vector(x, y, z),
-      Rot = angle,
-      ArrivalTime = arrivtime,
-      OrbitSpeed = orbspeed,
-      Tolerance = tol
-    }
-      if useincomingangle then
-      
-        local myself = LocalPlayer()
-        CamLockData.Rot = CalculateDirection3D(myself:GetPos(), CamLockData.Loc)
-      end
-    else
-      CamLockData = { -- Leave empty. if it isn't enabled, no value gets read.
-      } 
-    end
-    gamemode.Call("HandleCameraLockData", CamLockData)
 end
 
 function GM:CreateRoundResults()
@@ -408,9 +217,9 @@ local value = net.ReadInt(32)
     GAMEMODE.vgui_RoundResults:AddHonorableMention(pl, mention, value)
   end
 end
-
 local function HandleSpellCast()
   local pl = net.ReadPlayer()
+  local tbl = pl:GetTable()
   local spellindex = net.ReadUInt(8)
 
   local spellid = GetKeyFromIndex(SPELLS, spellindex)
@@ -418,7 +227,7 @@ local function HandleSpellCast()
   local spelltbl = SPELLS[spellid].TABLE
 
   pl:ExclaimSpellWords(spellid, 6)
-
+  PrintTable(tbl)
     pl.SpellsActive[spellid] = table.Copy(spell['TABLEVARS'])
   if pl == LocalPlayer() then
     pl:SetSpellCooldown(spellid, spelltbl.Cooldown)
@@ -432,7 +241,6 @@ local function HandleStatusEffect()
   local statusindex = net.ReadUInt(8)
   local host = net.ReadEntity()
 
-  print(statusindex)
   local key = GetKeyFromIndex(STATUS_EFFECTS, statusindex)
   local status = STATUS_EFFECTS[key]
   local statustbl = status.TABLE
@@ -461,6 +269,15 @@ local function HandleStatusEffect()
   end
 end
 
+local function HandleClassChange()
+  local newclass = net.ReadString()
+  gamemode.Call('ResetClassUI', {class = newclass})
+end
+
+function GM:SetCrosshairMode(mode)
+  crosshair:SwitchCrosshair(mode)
+end
+
 hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
   local keyname = input.GetKeyName(button)
   if input.IsKeyDown(79) then 
@@ -485,13 +302,6 @@ hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
   end
 end)
 
-gameevent.Listen( "player_spawn" )
-hook.Add( "player_spawn", "gm_player_spawn", function( data ) 
-  HandlePlayerSpawn(data)
-end)
-
-net.Receive('nox_CameraLock', HandleCameraLockWrap)
-
   net.Receive('nox_GameTypeInit', InitGameType)
 
   net.Receive('nox_Death', HandlePlayerDeath)
@@ -504,3 +314,5 @@ net.Receive('nox_CameraLock', HandleCameraLockWrap)
   net.Receive('nox_GiveStatus', HandleStatusEffect)
 
   net.Receive('FloatingScore', HandleFloatingScore)
+  net.Receive('nox_ClassUpdate', HandleClassChange)
+  net.Receive('nox_PlayerTeamSetup', HandlePlayerSetup)

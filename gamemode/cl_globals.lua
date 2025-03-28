@@ -33,3 +33,6 @@ GM.SPELLWORDS = {
     ['un'] = 'nox/un2.ogg',
     ['zo'] = 'nox/zo2.ogg',
 }
+--Crosshair Parameters
+CreateClientConVar('rtp_ch_sizeX', 1, true, false, 'crosshair size', 0.5, 2)
+CreateClientConVar('rtp_ch_sizeY', 1, true, false, 'crosshair size', 0.5, 2)

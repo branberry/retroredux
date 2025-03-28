@@ -18,6 +18,9 @@ AddCSLuaFile('cl_init.lua')
 AddCSLuaFile('cl_options.lua')
 AddCSLuaFile('cl_obj_player_extend.lua')
 AddCSLuaFile('cl_spells_util.lua')
+AddCSLuaFile('cl_register.lua')
+AddCSLuaFile('cl_hud.lua')
+AddCSLuaFile('cl_view.lua')
 
 AddCSLuaFile('vgui/class_select.lua')
 AddCSLuaFile('vgui/team_select.lua')
@@ -25,6 +28,7 @@ AddCSLuaFile('vgui/gamestate.lua')
 AddCSLuaFile('vgui/spell_editor.lua')
 AddCSLuaFile('vgui/spell_bar.lua')
 AddCSLuaFile('vgui/spell_wheel.lua')
+AddCSLuaFile('vgui/dch_melee1.lua')
 
 AddCSLuaFile('vgui/dm_teamscore.lua')
 AddCSLuaFile('vgui/roundresults.lua')
@@ -32,12 +36,12 @@ AddCSLuaFile('vgui/notifycenter.lua')
 AddCSLuaFile('vgui/statuseffectslayout.lua')
 
 include('shared.lua')
+include('sv_obj_player_extend.lua')
 
 include('sv_globals.lua')
 include('sv_register.lua')
 include('sv_util.lua')
 include('sv_spells_util.lua')
-include('sv_obj_player_extend.lua')
 
 util.AddNetworkString('nox_TeamUpdate')
 util.AddNetworkString('nox_RoundStatus')
@@ -47,6 +51,8 @@ util.AddNetworkString('nox_PostResults')
 util.AddNetworkString('nox_CameraLock')
 util.AddNetworkString('nox_PostHonorableMention')
 util.AddNetworkString('nox_CastSpell')
+util.AddNetworkString('nox_ClassUpdate')
+util.AddNetworkString('nox_PlayerTeamSetup')
 
 util.AddNetworkString('FloatingScore')
 
@@ -66,7 +72,9 @@ GM.PostMapData = RetrievePostMapData()
 
 function GM:Initialize()
 self:SetupVars()
-
+util.PrecacheModel('models/player/Group02/male_02.mdl')
+timer.Simple(1, function()
+self:ModelCache() end)
 
 self:GameTypeInit()
 end
@@ -133,6 +141,12 @@ local function TeamSelected(pl, cmd, tabargs, args)
     pl:SetNoDraw(false)
     pl:UnLock()
     pl:Spawn()
+
+    net.Start('nox_PlayerTeamSetup')
+      net.WritePlayer(pl)
+    net.Broadcast()
+    print(pl)
+    pl:SetUpTable()
   end
 end
 
@@ -248,6 +262,7 @@ function GM:PlayerSpawn(pl)
 
   local classtbl = CLASSES[pl:GetPlayerClass()]
   if classtbl then
+    util.PrecacheModel(classtbl['Model'])
     pl:SetModel(classtbl['Model'])
     pl:SetWalkSpeed(classtbl['Walkspeed'])
     pl:SetRunSpeed(classtbl['Walkspeed'])
@@ -475,6 +490,10 @@ local function changeClass(sender, command, arguments)
   sender:SetManaRegeneration(classInfo.ManaRegeneration)
   local class = arguments[1]
   sender:PrintMessage(HUD_PRINTTALK, 'You are now a ' .. class)
+
+  net.Start('nox_ClassUpdate') -- Have to do this since NetworkVarNotify doesn't work as the player spawns + network vars in generally take long to update it seems.
+  net.WriteString(className)
+  net.Send(sender)
 end
 
 concommand.Add('cc_change_class', changeClass)

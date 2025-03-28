@@ -3,5 +3,5 @@ DM = {
     Desc = 'First team to reach the elimination goal wins!',
     Folder = 'deathmatch',
     WinningKey = 'Score',
-    KeyTarget = 100
+    KeyTarget = 1
 }

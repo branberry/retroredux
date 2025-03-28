@@ -1,37 +1,39 @@
 local meta = FindMetaTable('Player')
 
 function meta:Think()
-    for i, v in pairs(self.SpellCooldowns) do
-        if v <= CurTime() then
-            self.SpellCooldowns[i] = nil
+    if self.SpellCooldowns then
+        for i, v in pairs(self.SpellCooldowns) do
+            if v and v <= CurTime() then
+                self.SpellCooldowns[i] = nil
+            end
         end
-    end
 
-    for i, v in pairs(self.SpellsActive) do 
-        local spell = SPELLS[i]
-        local spelltbl = spell.TABLE
+        for i, v in pairs(self.SpellsActive) do 
+            local spell = SPELLS[i]
+            local spelltbl = spell.TABLE
 
-        if spelltbl then
-            local shouldkill = spelltbl:Think(self)
-                
-            if shouldkill then
+            if spelltbl then
+                local shouldkill = spelltbl:Think(self)
+                    
+                if shouldkill then
+                    self.SpellsActive[i] = nil
+                end
+            else
                 self.SpellsActive[i] = nil
             end
-        else
-            self.SpellsActive[i] = nil
         end
-    end
 
-    for i, v in pairs(self.StatusEffects) do
-        local status = STATUS_EFFECTS[i]
-        local statustbl = status.TABLE
+        for i, v in pairs(self.StatusEffects) do
+            local status = STATUS_EFFECTS[i]
+            local statustbl = status.TABLE
 
-        if statustbl.Think then
+            if statustbl.Think then
 
-            local shouldkill = statustbl:Think(self)
+                local shouldkill = statustbl:Think(self)
 
-            if shouldkill then
-                self.StatusEffects[i] = nil
+                if shouldkill then
+                    self.StatusEffects[i] = nil
+                end
             end
         end
     end

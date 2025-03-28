@@ -39,10 +39,11 @@ SWEP.HoldType = 'melee2'
 
 SWEP.HitAnim = ACT_VM_HITCENTER
 SWEP.MissAnim = ACT_VM_MISSCENTER
+SWEP.InOmniAttack = true
 
-SWEP.StartSwing = CurTime()
+SWEP.StartSwing = 0
 SWEP.SwingStage = 0
-SWEP.NextSwingStage = CurTime() -- 0 = not attacking, 1 = preparing/winding-up, 2 = attacking
+SWEP.NextSwingStage = 0 -- 0 = not attacking, 1 = preparing/winding-up, 2 = attacking
 SWEP.IsHeavyAttack = false
 
 function SWEP:Initialize()
@@ -55,14 +56,17 @@ function SWEP:PlaySwingAnim()
 end
 
 function SWEP:PrepareSwing()
+    local pl = self:GetOwner()
     self.IsHeavyAttack = false
     self.SwingStage = 1
     self:SwingStateChanged(1)
     self.NextSwingStage = CurTime() + self.SwingDelay
     self:SetNextPrimaryFire(CurTime() + self.HeavySwingListen)
-
+    self.StartSwing = CurTime()
     local act = util.GetActivityIDByName('ACT_VM_PRESWING_01_N90') 
     self:_SendWeaponAnim(act, self.SwingDelay)
+    pl:AnimRestartGesture(1, util.GetActivityIDByName('ACT_HL2MP_ATKDIR_PRERANGE1_MELEE2'), false)
+    pl:SetLayerDuration(1, self.SwingDelay + 0.1)
     if CLIENT then
         self:PlayPrepSwingSound()
     end
@@ -85,7 +89,7 @@ function SWEP:PrepareHeavyAttack()
      local vm = self:GetOwner():GetViewModel()
 
      dur2 = vm:SequenceDuration()
-     vm:SetPlaybackRate(GetSpeedByDuration(dur2, (CurTime() - self.StartSwing) / self.NextSwingStage))
+     vm:SetPlaybackRate(GetSpeedByDuration(dur2, 1))
      vm:SetCycle(0.5)
 end
 
@@ -128,13 +132,13 @@ function SWEP:MeleeSwing()
     local pl = self:GetOwner()
     local recoil = self.MeleeRecoil
     local act = util.GetActivityIDByName('ACT_VM_SWING_01_N90')
+    local worldact = util.GetActivityIDByName('ACT_VM_SWING_01_N90')
     self:_SendWeaponAnim(ACT_VM_PRIMARYATTACK, self.AttackCooldown)
     pl:ViewPunch(Angle(recoil, recoil, recoil))
-
+    self:SetNextPrimaryFire(self.NextSwingStage + self.AttackCooldown)
     self.SwingStage = 2
     self:SwingStateChanged(2)
-
-    pl:AnimRestartGesture(1, ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE2, true)
+    pl:AnimRestartGesture(1, util.GetActivityIDByName('ACT_HL2MP_ATKDIR_RANGE1_MELEE2'), true)
     pl:SetLayerDuration(1, self.AttackCooldown)
 
     self.NextSwingStage = CurTime() + self.AttackCooldown
@@ -153,9 +157,7 @@ end
 function SWEP:EntityMeleeAttack(ent, amount, type, trace)
     if ent and ent:IsPlayer() then
         local finalforce = (self.MeleeKB * trace.Normal) * 128
-        ent:TakeSpecialDamage(amount, type, self:GetOwner(), self, finalforce)
-        local data = {HitGroup = ent:GetHitBoxHitGroup(trace.HitBox, ent:GetHitboxSet())}
-        ent:DamageImpact(data)
+        ent:TakeSpecialDamage(amount, type, self:GetOwner(), self, finalforce, trace.HitBox)
         
         if CLIENT then
             self:PlayFleshHitSound()
@@ -185,6 +187,26 @@ function SWEP:PostHitUtil(hitent, tr)
             end
         end
 	end
+end
+
+function SWEP:TranslateActivity(act)
+    local actstring = util.GetActivityNameByID(act)
+    local actnum = act
+    if ( self.ActivityTranslate[ act ] != nil ) then
+        actnum = self.ActivityTranslate[act]
+        actstring = util.GetActivityNameByID(actnum)
+    else return act end
+
+    if self.InOmniAttack then
+        actstring = 'ACT_HL2MP_ATKDIR_' .. string.sub(actstring, 11)
+    end
+    
+
+    actnum = util.GetActivityIDByName(actstring)
+    if CLIENT then
+    end
+	return actnum
+
 end
 
 function SWEP:SwingStateChanged(state)

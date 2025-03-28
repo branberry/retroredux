@@ -1,4 +1,4 @@
-SPELL = {
+local SPELL = {
     Name = 'Fire Bomb',
     Desc = 'Creates a giant flaming ball. The ball explodes shortly after its first bounce.',
     RuneIcon = 'spellicons/starburst.png',
@@ -7,7 +7,7 @@ SPELL = {
     Words = "zo ru un in zo ru"
 }
 
-SPELLVARS = {}
+local SPELLVARS = {}
 
 function SPELL:Init(pl)
 

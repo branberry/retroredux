@@ -1,15 +1,6 @@
 -- This file contains custom methods for the Player metatable (or 'class')
 local meta = FindMetaTable('Player')
 if not meta then return end
-
--- variables that will be predicted or exchanged via server and client.
-meta.RoundStats = {}
-meta.SpellCooldowns = {}
-meta.SpellsActive = {}
-meta.SpellVars = {} --[[ Instead of doing table.Copy on spell tables to allow for per-instance variables (which is most of the time eating data with redundant constants).
-We let spells define the variables that actually need it using the player's table. --]]
-meta.StatusEffects = {}  
-
 local PTeam = meta.Team
 
 if SERVER then util.AddNetworkString('regen_mana') end
@@ -26,6 +17,14 @@ function meta:SetMana(mana)
   self:SetNWInt('Mana', mana)
 end
 
+function meta:SetUpTable()
+  self.RoundStats = {}
+  self.SpellCooldowns = {}
+  self.SpellsActive = {}
+  self.SpellVars = {} -- Instead of doing table.Copy direclty on the spell table, We let spells define the variables that actually need to be per-instance.
+  self.StatusEffects = {}  
+end
+
 function meta:GetMana()
   local updatedMana = self:GetNWInt('Mana')
   local ct = CurTime()
@@ -34,7 +33,6 @@ function meta:GetMana()
     self.ManaRegenTime = ct + 5
     updatedMana = math.Clamp(updatedMana + self:GetManaRegeneration(), 0, self:GetMaxMana())
     print('manaregenTime', self.ManaRegenTime)
-    ('curTime', ct)
     print('regen mana size', self:GetManaRegeneration())
     -- we want to send an update to the server
     -- so that the updated value sticks
@@ -70,31 +68,17 @@ net.Receive('regen_mana', function(len, ply)
   ply:SetMana(mana)
 end)
 
-function meta:GetStatus(type)
-  local ent = self["status_" .. type]
-  if ent and ent:IsValid() and ent:GetOwner() == self then return ent end
-end
+function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce, HB)
 
-function meta:GiveStatus(Name, Effector, Args)
-
-  local ent = ents.Create("status_".. Name)
-  local existingEnt = self:GetStatus(Name)
-  if ent:IsValid() then
-    ent:Spawn()
-    if Effector then
-      ent:setEffector(Effector)
-    end
-    if existingEnt and existingEnt:IsValid() then
-      ent:SetPlayer(self, true)
-
-    else
-      ent:SetPlayer(self, false)
-    end
-  end
-end
-
-function meta:TakeSpecialDamage(amount, type, attacker, inflictor, damageForce)
-  if CLIENT then return end
+  if CLIENT and HB then 
+    local hb = self:GetHitBoxHitGroup(HB, 0)
+    local data = {
+      HitGroup = hb,
+      Weight = 1 - (self:Health() / self:GetMaxHealth())
+    }
+    
+    self:DamageImpact(data)
+  return end
   local d = DamageInfo()
   d:SetDamage(amount)
     if type then
@@ -179,10 +163,8 @@ function meta:MeleeTrace(range, size)
     
   return util.TraceHull(meleetrace) end
 
-function meta:CalcMainActivity()
-end
-
 function meta:DamageImpact(data)
   local act = GAMEMODE.FlinchGestures[data.HitGroup]
   self:AnimRestartGesture(4, act, true)
+  self:SetLayerWeight(4, data.Weight)
 end
