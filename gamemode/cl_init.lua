@@ -9,10 +9,13 @@ include('obj_player_extend.lua')
 include('cl_spells_util.lua')
 include('cl_register.lua')
 include('cl_view.lua')
+include('cl_music.lua')
 
 include('vgui/class_select.lua')
 include('vgui/team_select.lua')
 include('vgui/spell_editor.lua')
+include('vgui/buildmenu.lua')
+
 include('vgui/spell_bar.lua')
 include('vgui/spell_wheel.lua')
 include('vgui/gamestate.lua')
@@ -23,7 +26,6 @@ include('vgui/dch_melee1.lua')
 
 include('cl_hud.lua')
 
-
 include('vgui/statuseffectslayout.lua')
 
 local SPELL_SLOTS = {}
@@ -33,19 +35,10 @@ GM.TeamSelectViewOverride = ents.FindByName('Map_CinematicCamera')
 
 GM.GameType = ''
 
-GM.CameraLockData = {
-  Enabled = false,
-  Loc = vector_origin,
-  IniLoc = vector_origin,
-  Rot = angle_zero,
-  IniRot = angle_zero,
-  EaseTime = 2,
-  ArrivalTime = CurTime()
-}
-
 GM.SpellCooldowns = {}
 function GM:Think()
   self:PlayerThink()
+  --MUSIC:Tick()
 end
 
 function GM:PlayerThink()
@@ -103,8 +96,16 @@ local function HandlePlayerDeath()
   gamemode.Call('HandlePlayerDeath', pl, attacker)
 end
 
-local function HandlePlayerSetup()
+local function HandleTeamPlayerSetup()
   local pl = net.ReadPlayer()
+  if pl == LocalPlayer() then
+    local pl = LocalPlayer()
+    local teamid = TEAMS_PLAYING[pl:Team() + 1]
+    local teamtbl = TEAMS[teamid]
+    if teamtbl and teamtbl.DefMusic then
+      --MUSIC:SetMusic(teamtbl['DefMusic'], 2)
+    end
+  end
 end
 
 function GM:PostDrawViewModel( vm, ply, weapon )
@@ -131,7 +132,6 @@ end
 function GM:InitializeGameType()
 
   local name = net.ReadString()
-  print(name)
   self.GameType = name
   local gtinfo = GAMETYPES[name]
   local folder = gtinfo['Folder']
@@ -188,7 +188,6 @@ end
 
 local function RecieveRoundResults()
 local winner = net.ReadUInt(7)
-print(winner)
 gamemode.Call('RecieveRoundResults', winner)
 
 end
@@ -227,7 +226,6 @@ local function HandleSpellCast()
   local spelltbl = SPELLS[spellid].TABLE
 
   pl:ExclaimSpellWords(spellid, 6)
-  PrintTable(tbl)
     pl.SpellsActive[spellid] = table.Copy(spell['TABLEVARS'])
   if pl == LocalPlayer() then
     pl:SetSpellCooldown(spellid, spelltbl.Cooldown)
@@ -235,6 +233,28 @@ local function HandleSpellCast()
 
   spelltbl:Init(pl)
 end
+
+function GM:OpenBuildMenu()
+  if self.BuildMenu then
+      self.BuildMenu:Open()
+  else self.BuildMenu = vgui.Create('DBuildMenu') end
+  end
+
+local function HandleBuiltProp()
+  local pl = net.ReadPlayer()
+  local propindex = net.ReadUInt(8)
+  local prop = net.ReadEntity()
+  if pl == LocalPlayer() then
+    surface.PlaySound("buttons/button14.wav")
+  end
+  if prop and prop:IsValid() then
+    pl['UnfinishedProp'] = prop
+    local propkey = GetKeyFromIndex(GAMEMODE.BuildProps, propindex)
+    prop:SetProp(propkey)
+    prop:Spawn()
+  end
+end
+
 
 local function HandleStatusEffect()
   local pl = net.ReadEntity()
@@ -278,7 +298,7 @@ function GM:SetCrosshairMode(mode)
   crosshair:SwitchCrosshair(mode)
 end
 
-hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
+function GM:PlayerButtonDown(pl, button)
   local keyname = input.GetKeyName(button)
   if input.IsKeyDown(79) then 
     local keyname = '_' .. keyname
@@ -300,7 +320,11 @@ hook.Add('PlayerButtonDown', 'ButtonDown_SpellCast', function(pl, button)
       end
     end
   end
-end)
+  local swep = pl:GetActiveWeapon()
+  if swep and swep.ButtonDown then
+    swep:ButtonDown(pl, button)
+  end
+end
 
   net.Receive('nox_GameTypeInit', InitGameType)
 
@@ -315,4 +339,5 @@ end)
 
   net.Receive('FloatingScore', HandleFloatingScore)
   net.Receive('nox_ClassUpdate', HandleClassChange)
-  net.Receive('nox_PlayerTeamSetup', HandlePlayerSetup)
+  net.Receive('nox_PlayerTeamSetup', HandleTeamPlayerSetup)
+  net.Receive('nox_BuildProp', HandleBuiltProp)

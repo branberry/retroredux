@@ -39,6 +39,16 @@ function meta:Think()
     end
 end
 
+function meta:InputThink()
+    local swep = self:GetActiveWeapon()
+    local cmd = GetPredictionPlayer():GetCurrentCommand()
+    if cmd then
+        if swep and swep:IsValid() and swep.InputThink then
+            swep:InputThink(cmd)
+        end
+    end
+end
+
 function meta:GiveStatus(host, id, duration, effectiveness, frequency)
 
     local status = STATUS_EFFECTS[id]
@@ -60,5 +70,36 @@ function meta:GiveStatus(host, id, duration, effectiveness, frequency)
         self.StatusEffects[id] = table.Copy(statusvars)
         statustbl:Init(self, host, {Duration = duration, Effectiveness = effectiveness, Frequency = frequency})
         
+    end
+end
+
+function meta:CreatePropAtEyePos(propkey)
+    local proptbl = GAMEMODE.BuildProps[propkey]
+    if proptbl then
+
+        if self.UnfinishedProp then
+            self.UnfinishedProp:Remove()
+            --pl.UnfinishedProp = nil
+        end
+
+        local prop = ents.Create(proptbl.Ent)
+        prop:SetOwner(self)
+        prop:SetProp(propkey)
+        local propindex = GetKeyIndexFromTable(GAMEMODE.BuildProps, propkey)
+
+        local tr = self:GetEyeTrace()
+        local angle = Angle(0, 0, self:EyeAngles().r)
+        angle:Add(Angle(0, 180, 0))
+        prop:SetPos(tr.HitPos)
+        prop:SetAngles(angle)
+        --prop:Spawn()
+        self['UnfinishedProp'] = prop
+        timer.Simple(0.2, function()
+        net.Start('nox_buildprop')
+        net.WritePlayer(self)
+        net.WriteUInt(propindex, 8)
+        net.WriteEntity(prop)
+        net.Broadcast()
+        print('done') end)
     end
 end

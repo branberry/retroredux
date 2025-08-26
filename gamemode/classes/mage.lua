@@ -1,7 +1,7 @@
 MAGE = {
   Name = 'Mage',
-  Health = 100,
-  Walkspeed = 360,
+  Health = 128,
+  Walkspeed = 340,
   Mana = 200,
   ManaRegeneration = 20,
   Group = 'Magic',

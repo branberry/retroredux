@@ -31,11 +31,10 @@ local function PlayModelPanelSequence(self, seq, defaultseq)
         local seqid, seqdur = ent:LookupSequence(seq)
         local defaultseqid = ent:LookupSequence(defaultseq)
 
-        timer.Create('RoundResults_ModelPanel_Sequence', 0.1, 1, function() -- Sequences cannot play if a model is being initialized in the exact same tick. Adding a small delay fixes it.
+        timer.Create('RoundResults_ModelPanel_Sequence', 0.1, 1, function() -- Sequences cannot play if a model is being initialized in the same tick. Adding a small delay fixes it.
 
                     ent:SetSequence(seqid)
                     ent:ResetSequenceInfo()
-                    print(seq, defaultseq)
 
             timer.Create('RoundResults_ModelPanel_DefaultSequence', seqdur - 0.4, 1, function() -- the default sequence to return to. A little margin is left since layered sequences will typically end with a t-pose which is undesirable.
                 if ent and ent:IsValid() then

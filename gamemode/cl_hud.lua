@@ -82,7 +82,7 @@ local function MeleeCrossHair(w, h, pl)
   local final_x = w/2
   local final_y = h/2
   local swingratio = 0
-  local rot = math.Remap(pl:GetPoseParameter('atk_dir'), 0, 1, -180, 180)
+  local rot = math.NormalizeAngle(math.Remap(pl:GetPoseParameter('atk_dir'), 0, 1, -180, 180) - 90)
 
   local final_rot = rot
   local slope = math.tan(math.rad(final_rot))

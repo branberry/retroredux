@@ -1,0 +1,10 @@
+{
+    "FadeIn": -1,
+    "FadeOut": -1,
+
+    "Stimuli": {
+	"DAMAGETAKE_AOE":2, 
+	"DAMAGETAKE_PHYSICS":5,
+	"ENEMYVEHICLE_PROX":512,
+    }
+}

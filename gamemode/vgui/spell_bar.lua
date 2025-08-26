@@ -104,7 +104,6 @@ function PANEL:Init()
                 else
                     local inverted = (i * -1) + slots_halved -- It's a SHIFT spell so negate the index
                     local rebounded = i - slots_halved
-                    print(rebounded)
 
                     slots[inverted] = slot
                     slot.ID = inverted

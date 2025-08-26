@@ -20,6 +20,9 @@ end
 
 
 function GM:Move(pl, mv)
+  if SERVER and pl.InputThink then
+    pl:InputThink()
+  end
   local shouldoverride = false
   if pl.SpellsActive then
   for i, v in pairs(pl.SpellsActive) do
@@ -35,4 +38,11 @@ function GM:Move(pl, mv)
   return shouldoverride
   end
 end
+end
+
+function GM:StartCommand(pl, cmd)
+local swep = pl:GetActiveWeapon()
+  if swep and swep:IsValid() and swep.StartCommand then
+    swep:StartCommand(cmd)
+  end
 end

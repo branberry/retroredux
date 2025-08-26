@@ -1,3 +1,13 @@
+GM.CameraLockData = {
+  Enabled = false,
+  Loc = vector_origin,
+  IniLoc = vector_origin,
+  Rot = angle_zero,
+  IniRot = angle_zero,
+  EaseTime = 2,
+  ArrivalTime = CurTime()
+}
+
 function GM:CalcView(pl, origin, angles, fov)
     local cld = self.CameraLockData
     local angle_calc = angles

@@ -30,7 +30,7 @@ SWEP.DamageType = DMG_SLASH
 SWEP.DeployDelay = 0.5
 
 SWEP.HeavySwingListen = 0.2
-SWEP.HeavySwingDelay = 0.1 -- Additive to SWEP.Primary.Delay 
+SWEP.HeavySwingDelay = 0.1 -- Additive to SWEP.SwingDelay
 SWEP.SwingDelay = 0.4
 
 SWEP.AttackCooldown = 0.5
@@ -45,6 +45,8 @@ SWEP.StartSwing = 0
 SWEP.SwingStage = 0
 SWEP.NextSwingStage = 0 -- 0 = not attacking, 1 = preparing/winding-up, 2 = attacking
 SWEP.IsHeavyAttack = false
+SWEP.LockedYaw = false
+SWEP.Yaw = 0
 
 function SWEP:Initialize()
     self:SetWeaponHoldType(self.HoldType)
@@ -57,15 +59,15 @@ end
 
 function SWEP:PrepareSwing()
     local pl = self:GetOwner()
+    local act = util.GetActivityIDByName('ACT_VM_PRIMARYATTACK')
     self.IsHeavyAttack = false
     self.SwingStage = 1
     self:SwingStateChanged(1)
     self.NextSwingStage = CurTime() + self.SwingDelay
     self:SetNextPrimaryFire(CurTime() + self.HeavySwingListen)
-    self.StartSwing = CurTime()
-    local act = util.GetActivityIDByName('ACT_VM_PRESWING_01_N90') 
+    self.StartSwing = CurTime() 
     self:_SendWeaponAnim(act, self.SwingDelay)
-    pl:AnimRestartGesture(1, util.GetActivityIDByName('ACT_HL2MP_ATKDIR_PRERANGE1_MELEE2'), false)
+    pl:AnimRestartGesture(1, util.GetActivityIDByName('ACT_HL2MP_ATKDIR1_PRERANGE1_' .. string.upper(self.HoldType)), false)
     pl:SetLayerDuration(1, self.SwingDelay + 0.1)
     if CLIENT then
         self:PlayPrepSwingSound()
@@ -78,6 +80,7 @@ end
 
 
 function SWEP:PrepareHeavyAttack()
+    local pl = self:GetOwner()
     local swingstage = self.SwingStage
     local nextswingstage = self.NextSwingStage
     local heavyattack = self.IsHeavyAttack
@@ -91,6 +94,8 @@ function SWEP:PrepareHeavyAttack()
      dur2 = vm:SequenceDuration()
      vm:SetPlaybackRate(GetSpeedByDuration(dur2, 1))
      vm:SetCycle(0.5)
+
+     pl:SetLayerDuration(1, (nextswingstage + self.HeavySwingDelay) + 0.1)
 end
 
 
@@ -102,6 +107,9 @@ function SWEP:PrimaryAttack()
 
     if swingstage == 0 then
         self:PrepareSwing()
+        if self.SwitchedDirection then
+            self.SwitchedDirection = false
+        end
     
 
     elseif swingstage == 1 and !heavyattack then
@@ -117,6 +125,12 @@ function SWEP:Think()
     local swingstage = self.SwingStage
     local nextswingstage = self.NextSwingStage
     local heavyattack = self.IsHeavyAttack
+    local switched = self.SwitchedDirection
+
+    if SERVER and not switched and swingstage == 2 and (nextswingstage - (self.AttackCooldown*0.4) < CurTime()) then
+        pl:UpdateAttackDirection(AngleRand(-180, 180).Y)
+        self.SwitchedDirection = true
+    end
 
     if swingstage == 1 and (nextswingstage <= CurTime()) then 
         self:MeleeSwing()
@@ -129,16 +143,17 @@ function SWEP:Think()
 end
 
 function SWEP:MeleeSwing()
-    local pl = self:GetOwner()
     local recoil = self.MeleeRecoil
-    local act = util.GetActivityIDByName('ACT_VM_SWING_01_N90')
-    local worldact = util.GetActivityIDByName('ACT_VM_SWING_01_N90')
+
     self:_SendWeaponAnim(ACT_VM_PRIMARYATTACK, self.AttackCooldown)
+
+    local pl = self:GetOwner()
     pl:ViewPunch(Angle(recoil, recoil, recoil))
+
     self:SetNextPrimaryFire(self.NextSwingStage + self.AttackCooldown)
     self.SwingStage = 2
     self:SwingStateChanged(2)
-    pl:AnimRestartGesture(1, util.GetActivityIDByName('ACT_HL2MP_ATKDIR_RANGE1_MELEE2'), true)
+    pl:AnimRestartGesture(1, util.GetActivityIDByName('ACT_HL2MP_ATKDIR1_RANGE1_' .. string.upper(self.HoldType)), true)
     pl:SetLayerDuration(1, self.AttackCooldown)
 
     self.NextSwingStage = CurTime() + self.AttackCooldown
@@ -155,14 +170,15 @@ function SWEP:MeleeSwing()
 end
 
 function SWEP:EntityMeleeAttack(ent, amount, type, trace)
+    local owner = self:GetOwner()
     if ent and ent:IsPlayer() then
         local finalforce = (self.MeleeKB * trace.Normal) * 128
         ent:TakeSpecialDamage(amount, type, self:GetOwner(), self, finalforce, trace.HitBox)
-        
         if CLIENT then
             self:PlayFleshHitSound()
         end
     end
+
     self:PlaySwingSound()
     self:PostHitUtil(ent, trace)
 end
@@ -198,15 +214,44 @@ function SWEP:TranslateActivity(act)
     else return act end
 
     if self.InOmniAttack then
-        actstring = 'ACT_HL2MP_ATKDIR_' .. string.sub(actstring, 11)
-    end
-    
+        actstring = 'ACT_HL2MP_ATKDIR1_' .. string.sub(actstring, 11)
+
+    else actstring = 'ACT_HL2MP_' .. string.sub(actstring, 11) end
 
     actnum = util.GetActivityIDByName(actstring)
     if CLIENT then
     end
 	return actnum
 
+end
+function SWEP:UpdateAnimation(pl, vel, gspeed)
+    if pl.InitATKDIR then
+        local lerpangle = math.NormalizeAngle(self:CalcAtkDir())
+        pl:SetPoseParameter('atk_dir', lerpangle)
+    end
+end
+
+function SWEP:CalcAtkDir()
+    local ct = CurTime()
+    local pl = self:GetOwner()
+    if pl and pl:IsValid() then
+            local lerpangle = pl.InitATKDIR + ((pl.TargATKDIR - pl.InitATKDIR) * math.ease.InOutSine( math.min(1, ( (ct  - pl.InitATKDIRTime) / 0.7) )))
+            return lerpangle
+        end
+ end
+
+function SWEP:InputThink(cmd)
+end
+
+function SWEP:StartCommand(cmd)
+end
+
+function SWEP:Move(mv)
+    local owner = self:GetOwner()
+    if owner and owner:KeyDown(IN_WALK) then
+        local oldang = mv:GetOldAngles()
+        return true
+    end
 end
 
 function SWEP:SwingStateChanged(state)

@@ -22,8 +22,6 @@ function SPELL:Init(pl)
             firebomb:SetPos(pl:GetPos() + pl:GetViewOffset() + (aimvect * 64))
             firebomb:SetOwner(pl)
             firebomb:Spawn()
-            
-            print(pl:GetAimVector())
             local finalvect = aimvect * 800
             local phys = firebomb:GetPhysicsObject()
     

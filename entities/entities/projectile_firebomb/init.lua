@@ -16,7 +16,9 @@ function ENT:Initialize()
 		phys:SetMass(5)
 		phys:Wake()
 		phys:SetMaterial('gmod_bouncy')
-	end
+		phys:SetContents(CONTENTS_SOLID)
+		
+	end	self:SetCollisionGroup(COLLISION_GROUP_PLAYER)
 
 	self:SetColor(team.GetColor(self:GetOwner():Team()))
 

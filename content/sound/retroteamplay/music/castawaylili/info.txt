@@ -1,0 +1,21 @@
+{
+  "Name": "Castaway Lili (Dun Mir Anthem)",
+  "Desc": "An OST of Retro Team Play. The anthem for team Dun Mir.",
+  "Composers": "'Palexite'",
+  "BeatCutOff": 0.1,
+  "BeatMaxJump": 10,
+  "BPM": 120,
+  "defbeatinfo": {
+    "TransTime": 2,
+    "BeatFloor": 2,
+    "BeatWidth": 2,
+    "BeatCeiling": 2
+  },
+  "deftrackinfo": {
+    "FadeIn": -1,
+    "FadeOut": -1,
+    "EventStimuli": {
+      "PL_DAMAGETAKE": 200
+    }
+  }
+}

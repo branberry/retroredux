@@ -6,6 +6,8 @@ function GM:RegisterClasses()
 
   CLASSES['WARRIOR'] = WARRIOR
   CLASSES['MAGE'] = MAGE
+  CLASSES['ASSASSIN'] = ASSASSIN
+  CLASSES['CRAFTER'] = CRAFTER
   print('Classes registered')
 end
 
@@ -45,6 +47,15 @@ function GM:IncludeStatusEffects()
     else
       include('statuseffects/' .. directory .. '/cl_init.lua')
     end
+  end
+end
+
+function GM:RegisterActs()
+  local animobject = nil
+  if SERVER then
+    animobject = ents.Create('anm_dummy')
+  else
+    animobject = ents.CreateClientside('anm_dummy')
   end
 end
 

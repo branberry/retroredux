@@ -15,6 +15,7 @@ TEAMS = {
     Icon = '/noxctf/classicons/warrior',  -- Shows up on team selection screen.
     Quote = 'Might makes right', 
     SpawnEnt = 'info_player_red', -- The spawn entity used by mappers to declare a spawnpoint for this team.
+    DefMusic = 'castawaylili',
 
     Captain = 'models/player/soldier_stripped.mdl', -- Used in DModelPanels and such
     Captain_ColorOverall = true,
@@ -134,3 +135,215 @@ GM.FlinchGestures = { -- Key is Enum HITGROUP, value is Enum ACT
   [6] = ACT_FLINCH_LEFTLEG,
   [7] = ACT_FLINCH_LEFTLEG
 }
+
+
+
+GM.BuildProps = {}
+
+function GM:RegisterBuildProp(id, tbl)
+self.BuildProps[id] = tbl
+end
+
+GM:RegisterBuildProp('BPROP_SLIMWALL',
+  {
+    Name = 'Slim Wall',
+    Desc = 'A small brittle metal wall. Good for closing small exposed gaps.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_lab/blastdoor001b.mdl',
+    HP = 600,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_WIDEWALL',
+  {
+    Name = 'Wide Wall',
+    Desc = 'A brittle wall, nothing pretty but protective.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_lab/blastdoor001c.mdl',
+    HP = 750,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_FENCE',
+  {
+    Name = 'Fence',
+    Desc = 'A double wooden box designed for primitive structures.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_wasteland/wood_fence01a.mdl',
+    HP = 600,
+    DefaultMat = 'WOOD',
+  })
+
+  GM:RegisterBuildProp('BPROP_4X4BOX',
+  {
+    Name = '4x4 Box',
+    Desc = 'A wooden box designed for primitive structures.',
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_junk/wood_crate001a.mdl',
+    HP = 250,
+    DefaultMat = 'WOOD',
+  })
+
+  GM:RegisterBuildProp('BPROP_4X8BOX',
+  {
+    Name = '4x8 Box',
+    Desc = 'A double wooden box designed for primitive structures.',
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_junk/wood_crate001a.mdl',
+    HP = 250,
+    DefaultMat = 'WOOD',
+  })
+
+  GM:RegisterBuildProp('BPROP_SMALLPOLE',
+  {
+    Name = 'Small Pole',
+    Desc = 'A short stick handy for holding structures together.',
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_docks/dock01_pole01a_128.mdl',
+    HP = 500,
+    DefaultMat = 'WOOD',
+  })
+
+  GM:RegisterBuildProp('BPROP_PALLET',
+  {
+    Name = 'PALLET',
+    Desc = 'A Wooden pallet normally used to put crates on.',
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_junk/wood_pallet001a.mdl',
+    HP = 500,
+    DefaultMat = 'WOOD',
+  })
+
+  GM:RegisterBuildProp('BPROP_OILDRUM',
+  {
+    Name = 'Oil Drum',
+    Desc = 'A metal Drum previous used to store oil and other volatile fluids.',
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_c17/oildrum001.mdl',
+    HP = 450,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_SHORTPANEL',
+  {
+    Name = 'Short Panel',
+    Desc = 'A short strip of metal. Clunky but also damp.',
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_debris/metal_panel02a.mdl',
+    HP = 400,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_LONGPANEL',
+  {
+    Name = 'Long Panel',
+    Desc = "A long strip of metal. Meant to be protective, or shoved into someone's forehead.",
+    Category = 'PROPS',
+    SubCategory = 'Misc',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_debris/metal_panel01a.mdl',
+    HP = 600,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_SHIELDBARRICADE',
+  {
+    Name = 'Shielded Barricade',
+    Desc = 'A design copied off a mysterious army which were briefly mentioned in history but sworn mythological. Nontheless very protective.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_combine/combine_barricade_short01a.mdl',
+    HP = 600,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_BARS',
+  {
+    Name = 'Bars',
+    Desc = 'Metal bars designed to keep people in or out.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_wasteland/prison_gate001b.mdl',
+    HP = 800,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_BARRIER',
+  {
+    Name = 'Barrier',
+    Desc = 'A barrier that was once a defensive hazard acknowledgement, now an offensive one.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_c17/concrete_barrier001a.mdl',
+    HP = 650,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_WIDEFORTRESSWALL',
+  {
+    Name = 'Wide Fortress Wall',
+    Desc = 'A design copied off a mysterious army which were briefly mentioned in history but sworn mythological. Nontheless very protective.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_combine/combine_barricade_med03b.mdl',
+    HP = 850,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_SHORTFORTRESSWALL',
+  {
+    Name = 'Short Fortress Wall',
+    Desc = 'A design copied off a mysterious army which were briefly mentioned in history but sworn mythological. Nontheless very protective.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_combine/combine_barricade_med01a.mdl',
+    HP = 800,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_TALLFORTRESSWALL',
+  {
+    Name = 'Tall Fortress Wall',
+    Desc = 'A design copied off a mysterious army which were briefly mentioned in history but sworn mythological. Nontheless very protective.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_combine/combine_barricade_tall01a.mdl',
+    HP = 800,
+    DefaultMat = 'METAL',
+  })
+
+  GM:RegisterBuildProp('BPROP_SLOTTEDFORTRESSWALL',
+  {
+    Name = 'Slotted Fortress Wall',
+    Desc = 'A design copied off a mysterious army which were briefly mentioned in history but sworn mythological. Nontheless very protective.',
+    Category = 'PROPS',
+    SubCategory = 'Walls',
+    Ent = 'prop_prop',
+    Mdl = 'models/props_combine/combine_barricade_med02b.mdl',
+    HP = 800,
+    DefaultMat = 'METAL',
+  })

@@ -36,3 +36,8 @@ GM.SPELLWORDS = {
 --Crosshair Parameters
 CreateClientConVar('rtp_ch_sizeX', 1, true, false, 'crosshair size', 0.5, 2)
 CreateClientConVar('rtp_ch_sizeY', 1, true, false, 'crosshair size', 0.5, 2)
+
+GM.BuildMenuCategories = {
+    ['APPLIANCES'] = {Name = 'Appliances', Icon = 'materials/icon16/wrench.png', Color = Color(48, 106, 214, 255)},
+    ['PROPS'] = {Name = 'Props', Icon = 'materials/icon16/bricks.png', Color = Color(153, 153, 153)}
+}

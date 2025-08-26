@@ -21,17 +21,20 @@ AddCSLuaFile('cl_spells_util.lua')
 AddCSLuaFile('cl_register.lua')
 AddCSLuaFile('cl_hud.lua')
 AddCSLuaFile('cl_view.lua')
+AddCSLuaFile('cl_music.lua')
 
 AddCSLuaFile('vgui/class_select.lua')
 AddCSLuaFile('vgui/team_select.lua')
-AddCSLuaFile('vgui/gamestate.lua')
+AddCSLuaFile('vgui/roundresults.lua')
 AddCSLuaFile('vgui/spell_editor.lua')
+AddCSLuaFile('vgui/buildmenu.lua')
+
+AddCSLuaFile('vgui/gamestate.lua')
 AddCSLuaFile('vgui/spell_bar.lua')
 AddCSLuaFile('vgui/spell_wheel.lua')
 AddCSLuaFile('vgui/dch_melee1.lua')
 
 AddCSLuaFile('vgui/dm_teamscore.lua')
-AddCSLuaFile('vgui/roundresults.lua')
 AddCSLuaFile('vgui/notifycenter.lua')
 AddCSLuaFile('vgui/statuseffectslayout.lua')
 
@@ -50,7 +53,10 @@ util.AddNetworkString('nox_EndRound')
 util.AddNetworkString('nox_PostResults')
 util.AddNetworkString('nox_CameraLock')
 util.AddNetworkString('nox_PostHonorableMention')
+
 util.AddNetworkString('nox_CastSpell')
+util.AddNetworkString('nox_BuildProp')
+
 util.AddNetworkString('nox_ClassUpdate')
 util.AddNetworkString('nox_PlayerTeamSetup')
 
@@ -60,19 +66,10 @@ util.AddNetworkString('nox_GiveStatus')
 
 util.AddNetworkString('nox_Death')
 
-GM.LerpTimeScale = {
-  ShouldLerp = false,
-  InitialScale = 0,
-  TargetScale = 1,
-  InitialTime = 0,
-  FinishTime = 0
-}
-
 GM.PostMapData = RetrievePostMapData()
 
 function GM:Initialize()
 self:SetupVars()
-util.PrecacheModel('models/player/Group02/male_02.mdl')
 timer.Simple(1, function()
 self:ModelCache() end)
 
@@ -145,7 +142,6 @@ local function TeamSelected(pl, cmd, tabargs, args)
     net.Start('nox_PlayerTeamSetup')
       net.WritePlayer(pl)
     net.Broadcast()
-    print(pl)
     pl:SetUpTable()
   end
 end
@@ -262,7 +258,6 @@ function GM:PlayerSpawn(pl)
 
   local classtbl = CLASSES[pl:GetPlayerClass()]
   if classtbl then
-    util.PrecacheModel(classtbl['Model'])
     pl:SetModel(classtbl['Model'])
     pl:SetWalkSpeed(classtbl['Walkspeed'])
     pl:SetRunSpeed(classtbl['Walkspeed'])
@@ -333,56 +328,6 @@ function GM:EndRound(WinningIndex, CameraLockData)
       CollectiveCameraLock(CameraLockData)
     end
   end
-
-
-function GM:TimeLerpTick() -- TODO: Move this to sv_util.lua. Fatass math-expressive piece of code.
-  local lerptimeinfo = self.LerpTimeInfo
-
-  local tf = lerptimeinfo["FinishTime"]
-  local ti = lerptimeinfo["InitialTime"]
-  local t = CurTime()
-
-  local i = lerptimeinfo["InitialScale"]
-  local o = lerptimeinfo["TargetScale"]
-  local ponged = lerptimeinfo["Ponged"]
-
-  if tf and ti and i and o then
-    local timerange = tf - ti
-    local timediff = t - ti
-    local timeratio = math.min(1, timediff / timerange)
-
-    local scalediff = o - i
-
-    if timeratio < 1 then
-      game.SetTimeScale((timeratio * scalediff) + i)
-    else
-      game.SetTimeScale(o)
-
-      if ponged then
-        game.SetTimeScale(1)
-        table.Empty(self.LerpTimeInfo)
-
-      elseif lerptimeinfo["HoldTime"] <= CurTime() then
-
-        i = game.GetTimeScale()
-        o = 1
-        tf = CurTime() + 1
-        ti = CurTime()
-        ponged = true -- Brings the time scale back to normal, pardon the meaning "Pong".
-
-        self.LerpTimeInfo = {
-          ShouldLerp = true,
-          InitialTime = ti,
-          FinishTime = tf,
-          InitialScale = i,
-          TargetScale = o,
-          Ponged = ponged
-        }
-      end
-    end
-  end
-
-end
 
 function GM:PostEndResults()
   local results = self.RoundEndResults
@@ -566,5 +511,16 @@ net.Receive('nox_CastSpell', function(len, pl)
     end
     pl:SetSpellCooldown(key, spelltbl.Cooldown)
     spelltbl:Init(pl)
+  end
+end)
+
+net.Receive('nox_buildprop', function(len, pl)
+  if CLASSES[pl:GetPlayerClass()].CanBuild then
+    local propindex = net.ReadUInt(8)
+    local propkey = GetKeyFromIndex(GAMEMODE.BuildProps, propindex)
+    local proptbl = GAMEMODE.BuildProps[propkey]
+    if proptbl then
+      pl:CreatePropAtEyePos(propkey)
+    end
   end
 end)

@@ -21,8 +21,12 @@ function meta:SetUpTable()
   self.RoundStats = {}
   self.SpellCooldowns = {}
   self.SpellsActive = {}
-  self.SpellVars = {} -- Instead of doing table.Copy direclty on the spell table, We let spells define the variables that actually need to be per-instance.
+  self.SpellVars = {} -- Instead of doing table.Copy directly on the spell table, We let spells define the variables that actually need to be per-instance.
   self.StatusEffects = {}  
+  self.InitATKDIR = 0
+  self.InitATKDIRTime = 0
+  self.TargATKDIR = 0
+  --self.UnfinishedProp = 0
 end
 
 function meta:GetMana()
@@ -113,8 +117,8 @@ end
 
 function meta:Reset()
 if SERVER then
-self.RoundStats = {}
-self:SetTeam(0)
+  self.RoundStats = {}
+  self:SetTeam(0)
 end
 end
 
@@ -137,7 +141,7 @@ local temp_attacker_team = -1
 local function MeleeTraceFilter(ent)
   if ent:IsPlayer() and not (PTeam(ent) == PTeam(temp_attacker)) then
     return true 
-  else return false end
+  elseif ent.Base == 'prop_prop' or ent:GetClass() == 'prop_prop' then return true end
 end
 
 function meta:MeleeTrace(range, size)
@@ -167,4 +171,22 @@ function meta:DamageImpact(data)
   local act = GAMEMODE.FlinchGestures[data.HitGroup]
   self:AnimRestartGesture(4, act, true)
   self:SetLayerWeight(4, data.Weight)
+end
+
+function meta:UpdateAttackDirection(dir)
+  if self.InitATKDIR then
+    if CLIENT then
+      self.InitATKDIR = math.Remap(self:GetPoseParameter('atk_dir'), 0, 1, -180, 180)
+      self.InitATKDIRTime = CurTime()
+      self.TargATKDIR = math.Remap(dir, 0, 255, -180, 180)
+    else 
+      self.TargATKDIR = dir
+      self.InitATKDIRTime = CurTime()
+      self.InitATKDIR = self:GetPoseParameter('atk_dir') 
+      net.Start('nox_PlayerAtkDir')
+        net.WritePlayer(self)
+        net.WriteUInt(math.Remap(dir, -180, 180, 0, 255), 8)
+      net.Broadcast()
+    end
+    end
 end

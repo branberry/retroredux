@@ -9,7 +9,6 @@ end
 
 function ENT:SetUp(owner, dietime)
     self.DieTime = dietime
-    print(dietime)
     self.AutomaticFrameAdvance = true
     self:SetModel("models/Combine_Helicopter/helicopter_bomb01.mdl")
 	self:SetMaterial("models/shiny")
@@ -31,8 +30,6 @@ function ENT:Think()
 
     local delta = (CurTime() - self.StartTime) / (self.DieTime - self.StartTime)
     local curcolor = self:GetColor()
-
-    print(delta)
 
     if delta < 0.4 then curcolor.a = math.min((delta*4) * 125, 125)
 
